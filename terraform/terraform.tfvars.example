@@ -1,0 +1,43 @@
+aws_region      = "ap-southeast-2"
+name_prefix     = "yumaos"
+environment     = "prod"
+# Pin both images to this listing's tag or, better, the listing digest.
+container_image        = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.0"
+hermes_container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.0"
+
+# Required for Marketplace tasks. Copy from the listing (product code + product ID).
+marketplace_product_code = "replace-with-listing-product-code"
+marketplace_product_sku  = "replace-with-listing-product-id"
+
+# Required. Office, VPN, or client CIDRs only. 0.0.0.0/0 is rejected unless
+# allow_internet_ingress = true (public service behind WAF + HTTPS).
+allowed_ingress_cidrs  = ["203.0.113.0/24"]
+allow_internet_ingress = false
+
+# First launch can use the generated HTTP ALB URL.
+# Production: ACM certificate in the ALB Region, then set both.
+# app_url         = "https://yumaos.example.com"
+# certificate_arn = "arn:aws:acm:ap-southeast-2:123456789012:certificate/uuid"
+
+# Optional outbound email. Leave empty until the first admin exists.
+# ses_from_email = "YumaOS <no-reply@example.com>"
+
+database_multi_az            = false
+cache_high_availability      = false
+single_nat_gateway           = true
+enable_aws_backup            = false
+force_destroy_backup_vault   = true
+force_destroy_data_buckets   = true
+
+# Production baseline:
+# app_url                       = "https://yumaos.example.com"
+# certificate_arn               = "arn:aws:acm:ap-southeast-2:...:certificate/..."
+# allow_internet_ingress        = true
+# allowed_ingress_cidrs         = ["0.0.0.0/0"]
+# database_multi_az             = true
+# database_deletion_protection  = true
+# cache_high_availability       = true
+# single_nat_gateway            = false
+# enable_aws_backup             = true
+# force_destroy_backup_vault    = false
+# force_destroy_data_buckets    = false

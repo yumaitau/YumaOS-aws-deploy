@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AwsMarketplaceContainerLicense",
+      "Effect": "Allow",
+      "Action": [
+        "aws-marketplace:RegisterUsage",
+        "aws-marketplace:MeterUsage",
+        "license-manager:CheckoutLicense",
+        "license-manager:GetLicense",
+        "license-manager:CheckInLicense",
+        "license-manager:ExtendLicenseConsumption",
+        "license-manager:ListReceivedLicenses"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AmazonBedrockAuHaiku",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:GetInferenceProfile",
+        "bedrock:ListInferenceProfiles"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:ap-southeast-2:*:inference-profile/au.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-sonnet-4-6*",
+        "arn:aws:bedrock:ap-southeast-2:*:inference-profile/au.anthropic.claude-sonnet-4-6*"
+      ]
+    }
+  ]
+}

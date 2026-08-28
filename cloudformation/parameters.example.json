@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey": "NamePrefix",
+    "ParameterValue": "yumaos"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "ContainerImage",
+    "ParameterValue": "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.0"
+  },
+  {
+    "ParameterKey": "HermesContainerImage",
+    "ParameterValue": "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.0"
+  },
+  {
+    "ParameterKey": "MarketplaceProductCode",
+    "ParameterValue": "replace-with-listing-product-code"
+  },
+  {
+    "ParameterKey": "MarketplaceProductSku",
+    "ParameterValue": "replace-with-listing-product-id"
+  },
+  {
+    "ParameterKey": "AllowedIngressCidr",
+    "ParameterValue": "203.0.113.0/24"
+  },
+  {
+    "ParameterKey": "AllowInternetIngress",
+    "ParameterValue": "false"
+  }
+]

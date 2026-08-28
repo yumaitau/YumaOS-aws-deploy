@@ -1,0 +1,13 @@
+YumaOS AWS Marketplace deploy
+Copyright 2026 Yuma IT
+
+This repository contains Terraform, CloudFormation, and IAM artifacts for
+deploying the YumaOS container product in a buyer AWS account.
+
+The YumaOS and Hermes application container images are not licensed under
+Apache-2.0. Use of the images requires an AWS Marketplace subscription to
+YumaOS.
+
+Images:
+  709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws
+  709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes
