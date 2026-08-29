@@ -183,22 +183,19 @@ data "aws_iam_policy_document" "task" {
     }
   }
 
-  dynamic "statement" {
-    for_each = var.marketplace_product_code == "" ? [] : [1]
-    content {
-      sid    = "AwsMarketplaceContainerLicense"
-      effect = "Allow"
-      actions = [
-        "aws-marketplace:RegisterUsage",
-        "aws-marketplace:MeterUsage",
-        "license-manager:CheckoutLicense",
-        "license-manager:GetLicense",
-        "license-manager:CheckInLicense",
-        "license-manager:ExtendLicenseConsumption",
-        "license-manager:ListReceivedLicenses",
-      ]
-      resources = ["*"]
-    }
+  statement {
+    sid    = "AwsMarketplaceContainerLicense"
+    effect = "Allow"
+    actions = [
+      "aws-marketplace:RegisterUsage",
+      "aws-marketplace:MeterUsage",
+      "license-manager:CheckoutLicense",
+      "license-manager:GetLicense",
+      "license-manager:CheckInLicense",
+      "license-manager:ExtendLicenseConsumption",
+      "license-manager:ListReceivedLicenses",
+    ]
+    resources = ["*"]
   }
 }
 

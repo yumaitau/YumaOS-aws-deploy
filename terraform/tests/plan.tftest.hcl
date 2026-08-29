@@ -97,6 +97,14 @@ run "secure_test_baseline" {
   }
 
   assert {
+    condition = anytrue([
+      for variable in local.marketplace_environment :
+      variable.name == "AWS_MARKETPLACE_ENABLED" && variable.value == "true"
+    ])
+    error_message = "Marketplace license env must always be injected; omitting the product code must not disable the check."
+  }
+
+  assert {
     condition     = aws_ecs_service.web[0].network_configuration[0].assign_public_ip == false
     error_message = "Web tasks must not receive public IPs."
   }

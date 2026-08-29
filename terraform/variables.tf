@@ -66,7 +66,7 @@ variable "container_registry_credentials_secret_arn" {
 
 variable "marketplace_product_code" {
   type        = string
-  description = "AWS Marketplace container product code. Empty disables Marketplace license checks."
+  description = "AWS Marketplace container product code from the listing. Required. Empty or omitted values fail the task; they do not disable the license check."
   default     = ""
 }
 

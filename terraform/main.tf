@@ -101,18 +101,14 @@ locals {
     { name = "EMAIL_FROM", value = var.ses_from_email },
   ]
 
-  marketplace_environment = var.marketplace_product_code == "" ? [] : concat(
-    [
-      { name = "AWS_MARKETPLACE_ENABLED", value = "true" },
-      { name = "AWS_MARKETPLACE_FULFILLMENT", value = "container" },
-      { name = "AWS_MARKETPLACE_PRICING_MODEL", value = "contract" },
-      { name = "AWS_MARKETPLACE_PRODUCT_CODE", value = var.marketplace_product_code },
-      { name = "AWS_MARKETPLACE_PUBLIC_KEY_VERSION", value = tostring(var.marketplace_public_key_version) },
-    ],
-    var.marketplace_product_sku == "" ? [] : [
-      { name = "AWS_MARKETPLACE_PRODUCT_SKU", value = var.marketplace_product_sku },
-    ],
-  )
+  marketplace_environment = [
+    { name = "AWS_MARKETPLACE_ENABLED", value = "true" },
+    { name = "AWS_MARKETPLACE_FULFILLMENT", value = "container" },
+    { name = "AWS_MARKETPLACE_PRICING_MODEL", value = "contract" },
+    { name = "AWS_MARKETPLACE_PRODUCT_CODE", value = var.marketplace_product_code },
+    { name = "AWS_MARKETPLACE_PUBLIC_KEY_VERSION", value = tostring(var.marketplace_public_key_version) },
+    { name = "AWS_MARKETPLACE_PRODUCT_SKU", value = var.marketplace_product_sku },
+  ]
 
   hermes_environment = [
     { name = "HERMES_HOME", value = "/opt/data" },

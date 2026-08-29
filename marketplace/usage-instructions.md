@@ -10,7 +10,7 @@
    709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes
    ```
 
-5. Set `MarketplaceProductCode` and `MarketplaceProductSku` (Terraform: `marketplace_product_code`, `marketplace_product_sku`) from the listing. Empty values disable the license check and subscribed tasks will fail checkout.
+5. Set `MarketplaceProductCode` and `MarketplaceProductSku` (Terraform: `marketplace_product_code`, `marketplace_product_sku`) from the listing. The published image always checks out a Marketplace license. Empty, omitted, or overridden values fail the task; they do not disable the check.
 6. Set `AllowedIngressCidr` / `allowed_ingress_cidrs` to your office, VPN, or client CIDR. Leave `AllowInternetIngress` / `allow_internet_ingress` false. `0.0.0.0/0` is rejected unless that flag is true.
 7. Confirm the buyer account has Bedrock model access for `au.anthropic.claude-haiku-4-5-20251001-v1:0` in `ap-southeast-2`.
 8. Create the stack. The YumaOS entrypoint waits for Postgres, creates the `vector` extension, migrates, then starts. Hermes must be healthy on `127.0.0.1:8642` before the web container starts.
