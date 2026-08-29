@@ -85,6 +85,10 @@ YUMAOS_ALLOW_DESTROY=yes ./destroy.sh -var-file=terraform.tfvars
 
 Empty the uploads and vault buckets first if objects exist.
 
+## CI
+
+Pushes and pull requests to `main` run [`.github/workflows/security.yml`](.github/workflows/security.yml): Terraform fmt and validate, Checkov, and Trivy.
+
 ## Support
 
 https://os.yumait.com.au/contact
