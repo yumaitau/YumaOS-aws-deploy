@@ -10,9 +10,11 @@ YumaOS is a single-tenant company operating system with AI agents. You run it in
 
 YumaOS gives one organisation a dedicated Next.js application and a Hermes sidecar that talk over localhost. Agents can draft work. Destructive actions queue for a human who holds `agents.approve`. There is no environment variable that turns that gate off.
 
-The listing images are only those two containers. PostgreSQL and Redis are not shipped as images: the stack creates RDS PostgreSQL 16 (pgvector on migrate) and ElastiCache Redis with TLS in the buyer account, plus a two-AZ VPC, an Application Load Balancer, one Fargate task with YumaOS and Hermes on the same ENI, KMS, Secrets Manager, an uploads bucket, a vault bucket, and encrypted EFS for Hermes home. Amazon Bedrock is pinned to Australian Haiku (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) in `ap-southeast-2`.
+The listing images are only those two containers. PostgreSQL and Redis are not shipped as images: the stack creates RDS PostgreSQL 16 (pgvector on migrate) and ElastiCache Redis with TLS in the buyer account, plus a two-AZ VPC, an Application Load Balancer, one Fargate task with YumaOS and Hermes on the same ENI, KMS, Secrets Manager, an uploads bucket, a vault bucket, a Hermes snapshot bucket, and encrypted EFS for the live Hermes home. Amazon Bedrock is pinned to Australian Haiku (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) in `ap-southeast-2`.
 
 You subscribe on AWS Marketplace, then launch from https://github.com/yumaitau/YumaOS-aws-deploy with CloudFormation or Terraform. The `docker pull` snippet AWS shows only proves the subscription can pull the images. It does not create the stack.
+
+The YumaOS web image requires a current AWS Marketplace contract entitlement. It calls AWS License Manager `CheckoutLicense` at start and every 15 minutes. Hermes is a public sidecar and is not license-gated. Copying the web image, changing environment variables, or cancelling the subscription does not keep YumaOS usable. Product identity is baked at image build; stack parameters cannot disable or retarget that check.
 
 First visitor registers. Then lock public signup if you want. Support: https://os.yumait.com.au/contact
 
@@ -22,6 +24,7 @@ First visitor registers. Then lock public signup if you want. Support: https://o
 - YumaOS and Hermes share one Fargate task and talk on `127.0.0.1`. Do not route that traffic through the ALB.
 - Bedrock Australian Haiku in `ap-southeast-2`. No access keys in task definitions.
 - Human approval on destructive agent actions. The gate has no off switch.
+- Listing images are multi-arch (`linux/amd64` and `linux/arm64`). Choose `X86_64` or `ARM64` (Graviton) on the stack.
 - Launch with CloudFormation or Terraform from the public deploy repository.
 
 ## Categories

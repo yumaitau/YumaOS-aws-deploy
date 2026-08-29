@@ -74,8 +74,13 @@ output "vault_bucket_name" {
 }
 
 output "hermes_file_system_id" {
-  description = "EFS file system used as Hermes home."
+  description = "EFS file system used as the live Hermes POSIX home."
   value       = aws_efs_file_system.hermes.id
+}
+
+output "hermes_bucket_name" {
+  description = "Private KMS-encrypted S3 bucket for Hermes sqlite snapshots."
+  value       = aws_s3_bucket.hermes.id
 }
 
 output "runtime_secret_arn" {

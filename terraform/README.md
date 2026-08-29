@@ -5,10 +5,10 @@ Buyer launch path: clone https://github.com/yumaitau/YumaOS-aws-deploy and start
 Terraform reference stack for a buyer-owned deployment in `ap-southeast-2`:
 
 - Two-AZ VPC with public ALB subnets, private Fargate subnets, isolated data subnets, NAT egress, and an S3 gateway endpoint.
-- One ECS Fargate `X86_64` task: YumaOS web + Hermes sidecar on the same ENI so they talk over `127.0.0.1`. Those are the only Marketplace listing images.
+- One ECS Fargate task (`X86_64` or `ARM64`): YumaOS web + Hermes sidecar on the same ENI so they talk over `127.0.0.1`. Those are the only Marketplace listing images. Listing tags include both `linux/amd64` and `linux/arm64`.
 - RDS PostgreSQL 16 and TLS-only ElastiCache Redis with no public route or public address. They are not container images.
 - KMS-encrypted, versioned, public-blocked S3 uploads and vault buckets.
-- Encrypted EFS access point for Hermes `/opt/data`.
+- Encrypted EFS access point for the live Hermes `/opt/data` home, plus a private S3 bucket for sqlite snapshots. Hermes does not receive `DATABASE_URL`; migrate reserves a `hermes` Postgres schema for a future state backend.
 - Bedrock Australian Haiku pinned on the task role. No AWS access keys enter task definitions.
 - CloudWatch logs and Container Insights, ALB readiness checks, optional WAF, and optional AWS Backup.
 
@@ -17,7 +17,8 @@ Terraform reference stack for a buyer-owned deployment in `ap-southeast-2`:
 - Terraform 1.8 or newer.
 - AWS CLI authenticated to the intended account.
 - Buyer account Bedrock access for `au.anthropic.claude-haiku-4-5-20251001-v1:0` in `ap-southeast-2`.
-- Immutable multi-architecture images containing `linux/amd64`.
+- Immutable listing tags containing `linux/amd64` and `linux/arm64`. Set `cpu_architecture` to `X86_64` or `ARM64`.
+- The listing images require a current Marketplace contract entitlement. Terraform variables cannot disable that check.
 
 Never put secrets in `terraform.tfvars`. Terraform state contains generated database/application secrets; use an encrypted remote backend for production.
 

@@ -246,6 +246,101 @@ resource "aws_s3_bucket_lifecycle_configuration" "vault" {
   }
 }
 
+resource "aws_s3_bucket" "hermes" {
+  # checkov:skip=CKV2_AWS_62:No event consumer for Hermes state snapshots
+  # checkov:skip=CKV_AWS_144:Cross-region replication is buyer-owned DR
+  bucket_prefix = "${local.name}-hermes-"
+  force_destroy = var.force_destroy_data_buckets
+}
+
+resource "aws_s3_bucket_public_access_block" "hermes" {
+  bucket = aws_s3_bucket.hermes.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_ownership_controls" "hermes" {
+  bucket = aws_s3_bucket.hermes.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "hermes" {
+  bucket = aws_s3_bucket.hermes.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "hermes" {
+  bucket = aws_s3_bucket.hermes.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.this.arn
+      sse_algorithm     = "aws:kms"
+    }
+    bucket_key_enabled       = true
+    blocked_encryption_types = ["SSE-C"]
+  }
+}
+
+data "aws_iam_policy_document" "hermes_bucket" {
+  statement {
+    sid    = "DenyInsecureTransport"
+    effect = "Deny"
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    actions = ["s3:*"]
+    resources = [
+      aws_s3_bucket.hermes.arn,
+      "${aws_s3_bucket.hermes.arn}/*",
+    ]
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "hermes" {
+  bucket = aws_s3_bucket.hermes.id
+  policy = data.aws_iam_policy_document.hermes_bucket.json
+
+  depends_on = [aws_s3_bucket_public_access_block.hermes]
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "hermes" {
+  bucket = aws_s3_bucket.hermes.id
+
+  rule {
+    id     = "hermes-state-maintenance"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+  }
+}
+
 resource "aws_s3_bucket" "logs" {
   # checkov:skip=CKV_AWS_18:Access-log destination cannot log to itself
   # checkov:skip=CKV_AWS_145:ALB access logs require SSE-S3, not SSE-KMS
@@ -368,6 +463,7 @@ data "aws_iam_policy_document" "logs_bucket" {
     resources = [
       "${aws_s3_bucket.logs.arn}/s3/uploads/*",
       "${aws_s3_bucket.logs.arn}/s3/vault/*",
+      "${aws_s3_bucket.logs.arn}/s3/hermes/*",
     ]
 
     condition {
@@ -382,6 +478,7 @@ data "aws_iam_policy_document" "logs_bucket" {
       values = [
         aws_s3_bucket.uploads.arn,
         aws_s3_bucket.vault.arn,
+        aws_s3_bucket.hermes.arn,
       ]
     }
   }
@@ -406,6 +503,14 @@ resource "aws_s3_bucket_logging" "vault" {
   bucket        = aws_s3_bucket.vault.id
   target_bucket = aws_s3_bucket.logs.id
   target_prefix = "s3/vault/"
+
+  depends_on = [aws_s3_bucket_policy.logs]
+}
+
+resource "aws_s3_bucket_logging" "hermes" {
+  bucket        = aws_s3_bucket.hermes.id
+  target_bucket = aws_s3_bucket.logs.id
+  target_prefix = "s3/hermes/"
 
   depends_on = [aws_s3_bucket_policy.logs]
 }

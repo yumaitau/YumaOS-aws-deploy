@@ -17,6 +17,7 @@ AWS Marketplace always shows `docker login` + `docker pull` for container listin
 - One ECS Fargate task with **two containers on the same ENI**:
   - `web` — YumaOS on `:3000`
   - `hermes` — Hermes Agent on `:8642` (dashboard `:9119`)
+  - Listing tags are multi-arch (`linux/amd64` + `linux/arm64`). Set **Cpu architecture** to `X86_64` or `ARM64` (Graviton). Both containers follow that choice.
 - Bilateral localhost wiring (do not change these):
   - `HERMES_URL=http://127.0.0.1:8642`
   - `HERMES_DASHBOARD_URL=http://127.0.0.1:9119`
@@ -36,7 +37,7 @@ cd YumaOS-aws-deploy/cloudformation
 cp parameters.example.json parameters.json
 ```
 
-Console: Create stack → Upload `yumaos-fargate.yaml` → set **ContainerImage**, **HermesContainerImage**, **MarketplaceProductCode**, **MarketplaceProductSku** → set **AllowedIngressCidr** → acknowledge IAM → Create. Do not use `0.0.0.0/0` unless **AllowInternetIngress** is true.
+Console: Create stack → Upload `yumaos-fargate.yaml` → set **ContainerImage**, **HermesContainerImage**, **CpuArchitecture** (`X86_64` or `ARM64`), **MarketplaceProductCode**, **MarketplaceProductSku** → set **AllowedIngressCidr** → acknowledge IAM → Create. Do not use `0.0.0.0/0` unless **AllowInternetIngress** is true.
 
 Details: [`cloudformation/README.md`](cloudformation/README.md). Seller Central copy lives in [`marketplace/`](marketplace/).
 
@@ -50,6 +51,8 @@ terraform init
 terraform apply -var-file=terraform.tfvars
 terraform output application_url
 ```
+
+The listing image requires a current AWS Marketplace entitlement. Copying the image does not keep the product usable after the subscription ends. There is no environment variable that turns the check off.
 
 First visitor registers (signup is open). Then set `AUTH_DISABLE_SIGNUP=true` in a follow-up if you want to lock public registration. No seed admin is baked into the image.
 

@@ -16,6 +16,10 @@
     "ParameterValue": "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.1"
   },
   {
+    "ParameterKey": "CpuArchitecture",
+    "ParameterValue": "X86_64"
+  },
+  {
     "ParameterKey": "MarketplaceProductCode",
     "ParameterValue": "replace-with-listing-product-code"
   },

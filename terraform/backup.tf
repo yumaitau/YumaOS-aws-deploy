@@ -80,6 +80,7 @@ resource "aws_backup_selection" "protected" {
     aws_db_instance.this.arn,
     aws_s3_bucket.uploads.arn,
     aws_s3_bucket.vault.arn,
+    aws_s3_bucket.hermes.arn,
     aws_efs_file_system.hermes.arn,
   ]
 

@@ -113,6 +113,24 @@ data "aws_iam_policy_document" "task" {
   }
 
   statement {
+    sid       = "ListHermesStateBucket"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.hermes.arn]
+  }
+
+  statement {
+    sid    = "ManageHermesStateObjects"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+    ]
+    resources = ["${aws_s3_bucket.hermes.arn}/*"]
+  }
+
+  statement {
     sid    = "UseApplicationKey"
     effect = "Allow"
     actions = [
@@ -186,9 +204,9 @@ data "aws_iam_policy_document" "task" {
   statement {
     sid    = "AwsMarketplaceContainerLicense"
     effect = "Allow"
+    # Resource * is required by AWS License Manager for these APIs.
+    # https://docs.aws.amazon.com/marketplace/latest/userguide/container-license-manager-integration.html
     actions = [
-      "aws-marketplace:RegisterUsage",
-      "aws-marketplace:MeterUsage",
       "license-manager:CheckoutLicense",
       "license-manager:GetLicense",
       "license-manager:CheckInLicense",

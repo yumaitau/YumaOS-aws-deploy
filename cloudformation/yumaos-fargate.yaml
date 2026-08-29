@@ -30,6 +30,11 @@ Metadata:
           - NamePrefix
           - Environment
       - Label:
+          default: Compute
+        Parameters:
+          - CpuArchitecture
+          - WebDesiredCount
+      - Label:
           default: Network
         Parameters:
           - VpcCidr
@@ -59,6 +64,8 @@ Metadata:
         default: Listing product code
       MarketplaceProductSku:
         default: Listing product ID (SKU)
+      CpuArchitecture:
+        default: Fargate CPU architecture
       CertificateArn:
         default: ACM certificate ARN (HTTPS)
       SesFromEmail:
@@ -81,29 +88,37 @@ Parameters:
     Type: String
     Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.1"
     AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
-    Description: Marketplace ECR image tag or digest for YumaOS. Do not use :latest.
+    Description: Marketplace ECR image tag or digest for YumaOS. Listing tags are multi-arch (linux/amd64 + linux/arm64). Do not use :latest.
 
   HermesContainerImage:
     Type: String
     Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.1"
     AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
-    Description: Marketplace ECR image tag or digest for the Hermes sidecar. Do not use :latest.
+    Description: Marketplace ECR image tag or digest for the Hermes sidecar. Listing tags are multi-arch. Do not use :latest.
+
+  CpuArchitecture:
+    Type: String
+    Default: X86_64
+    AllowedValues:
+      - X86_64
+      - ARM64
+    Description: Fargate CPU architecture. Listing tags include linux/amd64 and linux/arm64. ARM64 is Graviton. Both containers use this value. Pin :tag-amd64 or :tag-arm64 if you want a single-arch image.
 
   MarketplaceProductCode:
     Type: String
     Default: ""
-    Description: AWS Marketplace product code from the listing. Required. Empty or omitted values fail the task; they do not disable the license check.
+    Description: Listing product code, documentary only. The image checks out its baked identity; this value cannot disable or retarget licensing.
 
   MarketplaceProductSku:
     Type: String
     Default: ""
-    Description: AWS Marketplace product ID used as License Manager ProductSKU. Required for contract pricing. Empty values fail the task; they do not disable the license check.
+    Description: Listing product ID, documentary only. License Manager ProductSKU is baked into the Marketplace image.
 
   MarketplacePublicKeyVersion:
     Type: Number
     Default: 1
     MinValue: 1
-    Description: PublicKeyVersion from Seller Central.
+    Description: Unused by the contract listing image. Kept so existing parameter files still apply.
 
   VpcCidr:
     Type: String
@@ -699,6 +714,7 @@ Resources:
             Resource:
               - !Sub ${LogsBucket.Arn}/s3/uploads/*
               - !Sub ${LogsBucket.Arn}/s3/vault/*
+              - !Sub ${LogsBucket.Arn}/s3/hermes/*
             Condition:
               StringEquals:
                 aws:SourceAccount: !Ref AWS::AccountId
@@ -804,6 +820,58 @@ Resources:
             Resource:
               - !GetAtt VaultBucket.Arn
               - !Sub ${VaultBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  HermesStateBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: LogsBucketPolicy
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt EncryptionKey.Arn
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LogsBucket
+        LogFilePrefix: s3/hermes/
+      LifecycleConfiguration:
+        Rules:
+          - Id: hermes-state-maintenance
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+            NoncurrentVersionExpirationInDays: 90
+      Tags:
+        - Key: Application
+          Value: YumaOS
+
+  HermesStateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref HermesStateBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt HermesStateBucket.Arn
+              - !Sub ${HermesStateBucket.Arn}/*
             Condition:
               Bool:
                 aws:SecureTransport: "false"
@@ -934,6 +1002,19 @@ Resources:
         PasswordLength: 64
         ExcludePunctuation: true
 
+  HermesStatePassword:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      Description: YumaOS Hermes reserved Postgres role password
+      KmsKeyId: !Ref EncryptionKey
+      GenerateSecretString:
+        PasswordLength: 40
+        ExcludePunctuation: true
+        SecretStringTemplate: '{"username":"hermes"}'
+        GenerateStringKey: password
+
   HermesApiSecret:
     Type: AWS::SecretsManager::Secret
     DeletionPolicy: Delete
@@ -1061,7 +1142,9 @@ Resources:
           "HERMES_API_KEY": "{{resolve:secretsmanager:${HermesApiSecret}:SecretString}}",
           "HERMES_DASHBOARD_USER": "operator",
           "HERMES_DASHBOARD_PASSWORD": "{{resolve:secretsmanager:${HermesDashboardSecret}:SecretString}}",
-          "HERMES_DASHBOARD_SECRET": "{{resolve:secretsmanager:${HermesDashboardKey}:SecretString}}"
+          "HERMES_DASHBOARD_SECRET": "{{resolve:secretsmanager:${HermesDashboardKey}:SecretString}}",
+          "HERMES_STATE_ROLE_PASSWORD": "{{resolve:secretsmanager:${HermesStatePassword}:SecretString:password}}",
+          "HERMES_STATE_DATABASE_URL": "postgresql://hermes:{{resolve:secretsmanager:${HermesStatePassword}:SecretString:password}}@${Database.Endpoint.Address}:5432/yumaos?sslmode=require"
         }
 
   ExecutionRole:
@@ -1150,6 +1233,17 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource: !Sub ${VaultBucket.Arn}/vault/*
+              - Sid: ListHermesStateBucket
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt HermesStateBucket.Arn
+              - Sid: ManageHermesStateObjects
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub ${HermesStateBucket.Arn}/*
               - Sid: UseApplicationKey
                 Effect: Allow
                 Action:
@@ -1215,9 +1309,9 @@ Resources:
         Statement:
           - Sid: AwsMarketplaceContainerLicense
             Effect: Allow
+            # Resource * is required by AWS License Manager for these APIs.
+            # https://docs.aws.amazon.com/marketplace/latest/userguide/container-license-manager-integration.html
             Action:
-              - aws-marketplace:RegisterUsage
-              - aws-marketplace:MeterUsage
               - license-manager:CheckoutLicense
               - license-manager:GetLicense
               - license-manager:CheckInLicense
@@ -1443,7 +1537,7 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       RuntimePlatform:
-        CpuArchitecture: X86_64
+        CpuArchitecture: !Ref CpuArchitecture
         OperatingSystemFamily: LINUX
       Volumes:
         - Name: hermes-home
@@ -1477,6 +1571,12 @@ Resources:
               Value: /opt/data
             - Name: HOME
               Value: /opt/data
+            - Name: HERMES_S3_BUCKET
+              Value: !Ref HermesStateBucket
+            - Name: HERMES_S3_PREFIX
+              Value: state
+            - Name: HERMES_S3_REGION
+              Value: !Ref AWS::Region
             - Name: API_SERVER_ENABLED
               Value: "true"
             - Name: API_SERVER_HOST
@@ -1514,6 +1614,8 @@ Resources:
               ValueFrom: !Sub "${RuntimeSecret}:HERMES_DASHBOARD_PASSWORD::"
             - Name: HERMES_DASHBOARD_BASIC_AUTH_SECRET
               ValueFrom: !Sub "${RuntimeSecret}:HERMES_DASHBOARD_SECRET::"
+            - Name: HERMES_STATE_DATABASE_URL
+              ValueFrom: !Sub "${RuntimeSecret}:HERMES_STATE_DATABASE_URL::"
           MountPoints:
             - SourceVolume: hermes-home
               ContainerPath: /opt/data
@@ -1647,6 +1749,7 @@ Resources:
               - Name: EMAIL_FROM
                 Value: !Ref SesFromEmail
               - !Ref AWS::NoValue
+            # Documentary only. The listing image always checks out a license.
             - Name: AWS_MARKETPLACE_ENABLED
               Value: "true"
             - Name: AWS_MARKETPLACE_FULFILLMENT
@@ -1676,6 +1779,8 @@ Resources:
               ValueFrom: !Sub "${RuntimeSecret}:HERMES_DASHBOARD_PASSWORD::"
             - Name: HERMES_DASHBOARD_SECRET
               ValueFrom: !Sub "${RuntimeSecret}:HERMES_DASHBOARD_SECRET::"
+            - Name: HERMES_STATE_ROLE_PASSWORD
+              ValueFrom: !Sub "${RuntimeSecret}:HERMES_STATE_ROLE_PASSWORD::"
           HealthCheck:
             Command:
               - CMD-SHELL
@@ -1703,7 +1808,7 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       RuntimePlatform:
-        CpuArchitecture: X86_64
+        CpuArchitecture: !Ref CpuArchitecture
         OperatingSystemFamily: LINUX
       ContainerDefinitions:
         - Name: migration
@@ -1739,6 +1844,8 @@ Resources:
               ValueFrom: !Sub "${RuntimeSecret}:BETTER_AUTH_SECRET::"
             - Name: ENCRYPTION_KEY
               ValueFrom: !Sub "${RuntimeSecret}:ENCRYPTION_KEY::"
+            - Name: HERMES_STATE_ROLE_PASSWORD
+              ValueFrom: !Sub "${RuntimeSecret}:HERMES_STATE_ROLE_PASSWORD::"
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -1833,6 +1940,7 @@ Resources:
           - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:db:${NamePrefix}-${Environment}-postgres
           - !GetAtt UploadsBucket.Arn
           - !GetAtt VaultBucket.Arn
+          - !GetAtt HermesStateBucket.Arn
           - !GetAtt HermesFileSystem.Arn
 
 Outputs:
@@ -1885,6 +1993,10 @@ Outputs:
   VaultBucketName:
     Description: Private KMS-encrypted S3 vault bucket.
     Value: !Ref VaultBucket
+
+  HermesBucketName:
+    Description: Private KMS-encrypted S3 bucket for Hermes sqlite snapshots.
+    Value: !Ref HermesStateBucket
 
   HermesFileSystemId:
     Description: EFS file system used as Hermes home.

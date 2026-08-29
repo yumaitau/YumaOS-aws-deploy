@@ -101,6 +101,8 @@ locals {
     { name = "EMAIL_FROM", value = var.ses_from_email },
   ]
 
+  # Documentary only. The listing image bakes product identity and always
+  # calls CheckoutLicense. These variables cannot disable or retarget licensing.
   marketplace_environment = [
     { name = "AWS_MARKETPLACE_ENABLED", value = "true" },
     { name = "AWS_MARKETPLACE_FULFILLMENT", value = "container" },
@@ -113,6 +115,9 @@ locals {
   hermes_environment = [
     { name = "HERMES_HOME", value = "/opt/data" },
     { name = "HOME", value = "/opt/data" },
+    { name = "HERMES_S3_BUCKET", value = aws_s3_bucket.hermes.id },
+    { name = "HERMES_S3_PREFIX", value = "state" },
+    { name = "HERMES_S3_REGION", value = var.aws_region },
     { name = "API_SERVER_ENABLED", value = "true" },
     { name = "API_SERVER_HOST", value = "0.0.0.0" },
     { name = "API_SERVER_PORT", value = "8642" },
@@ -139,6 +144,7 @@ locals {
       "HERMES_DASHBOARD_USER",
       "HERMES_DASHBOARD_PASSWORD",
       "HERMES_DASHBOARD_SECRET",
+      "HERMES_STATE_ROLE_PASSWORD",
       ] : {
       name      = key
       valueFrom = "${aws_secretsmanager_secret.runtime.arn}:${key}::"
@@ -150,6 +156,7 @@ locals {
     { name = "HERMES_DASHBOARD_BASIC_AUTH_USERNAME", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:HERMES_DASHBOARD_USER::" },
     { name = "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:HERMES_DASHBOARD_PASSWORD::" },
     { name = "HERMES_DASHBOARD_BASIC_AUTH_SECRET", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:HERMES_DASHBOARD_SECRET::" },
+    { name = "HERMES_STATE_DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:HERMES_STATE_DATABASE_URL::" },
   ]
 
   alb_ingress_rules = {

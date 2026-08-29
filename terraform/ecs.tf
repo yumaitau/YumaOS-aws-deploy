@@ -37,7 +37,7 @@ resource "aws_ecs_task_definition" "web" {
 
   runtime_platform {
     operating_system_family = "LINUX"
-    cpu_architecture        = "X86_64"
+    cpu_architecture        = var.cpu_architecture
   }
 
   volume {
@@ -143,7 +143,7 @@ resource "aws_ecs_task_definition" "migration" {
 
   runtime_platform {
     operating_system_family = "LINUX"
-    cpu_architecture        = "X86_64"
+    cpu_architecture        = var.cpu_architecture
   }
 
   container_definitions = jsonencode([

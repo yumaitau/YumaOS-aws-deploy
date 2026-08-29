@@ -5,8 +5,6 @@
       "Sid": "AwsMarketplaceContainerLicense",
       "Effect": "Allow",
       "Action": [
-        "aws-marketplace:RegisterUsage",
-        "aws-marketplace:MeterUsage",
         "license-manager:CheckoutLicense",
         "license-manager:GetLicense",
         "license-manager:CheckInLicense",

@@ -40,7 +40,12 @@ run "secure_test_baseline" {
 
   assert {
     condition     = aws_ecs_task_definition.web.runtime_platform[0].cpu_architecture == "X86_64"
-    error_message = "Fargate web task must explicitly target amd64."
+    error_message = "Default Fargate architecture is X86_64. Set cpu_architecture=ARM64 for Graviton."
+  }
+
+  assert {
+    condition     = aws_ecs_task_definition.migration.runtime_platform[0].cpu_architecture == "X86_64"
+    error_message = "Migration task architecture must match the web task."
   }
 
   assert {
@@ -61,6 +66,11 @@ run "secure_test_baseline" {
   assert {
     condition = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: hermes") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: web") && !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Image: postgres")
     error_message = "CloudFormation task must ship web and Hermes only; Postgres is RDS."
+  }
+
+  assert {
+    condition = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "CpuArchitecture: !Ref CpuArchitecture") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "- ARM64")
+    error_message = "CloudFormation must let the buyer choose X86_64 or ARM64."
   }
 
   assert {
@@ -135,7 +145,15 @@ run "secure_test_baseline" {
       for variable in local.marketplace_environment :
       variable.name == "AWS_MARKETPLACE_ENABLED" && variable.value == "true"
     ])
-    error_message = "Marketplace license env must always be injected; omitting the product code must not disable the check."
+    error_message = "Marketplace env is documentary only; it must not be omitted in a way that looks like a disable switch."
+  }
+
+  assert {
+    condition = alltrue([
+      for variable in concat(local.common_environment, local.marketplace_environment) :
+      !can(regex("(?i)(SKIP_|DISABLE_|ENFORCE_).*LICENSE", variable.name))
+    ])
+    error_message = "Task environment must not contain a license-disable switch."
   }
 
   assert {
@@ -161,6 +179,48 @@ run "secure_test_baseline" {
   assert {
     condition     = aws_efs_file_system.hermes.encrypted
     error_message = "Hermes EFS must be encrypted."
+  }
+
+  assert {
+    condition     = aws_s3_bucket_public_access_block.hermes.block_public_policy
+    error_message = "Hermes state bucket must block public policies."
+  }
+
+  assert {
+    condition = anytrue([
+      for variable in local.hermes_environment :
+      variable.name == "HERMES_HOME" && variable.value == "/opt/data"
+    ])
+    error_message = "Hermes must use an explicit HERMES_HOME on EFS."
+  }
+
+  assert {
+    condition = anytrue([
+      for variable in local.hermes_environment :
+      variable.name == "HERMES_S3_BUCKET"
+    ])
+    error_message = "Hermes must receive its snapshot bucket name."
+  }
+
+  assert {
+    condition = anytrue([
+      for secret in local.hermes_secrets : secret.name == "HERMES_STATE_DATABASE_URL"
+    ])
+    error_message = "Hermes may receive the reserved-schema DSN, never DATABASE_URL."
+  }
+
+  assert {
+    condition = alltrue([
+      for secret in local.hermes_secrets : secret.name != "DATABASE_URL"
+    ])
+    error_message = "Hermes must not receive the YumaOS DATABASE_URL."
+  }
+
+  assert {
+    condition = anytrue([
+      for secret in local.common_secrets : secret.name == "HERMES_STATE_ROLE_PASSWORD"
+    ])
+    error_message = "Migrate must be able to create the reserved hermes Postgres role."
   }
 
   assert {
@@ -213,6 +273,34 @@ run "migration_only_bootstrap" {
     condition     = length(aws_ecs_service.web) == 0
     error_message = "Bootstrap must be able to run migration before the service exists."
   }
+}
+
+run "arm64_runtime_platform" {
+  command = plan
+
+  variables {
+    cpu_architecture = "ARM64"
+  }
+
+  assert {
+    condition     = aws_ecs_task_definition.web.runtime_platform[0].cpu_architecture == "ARM64"
+    error_message = "cpu_architecture=ARM64 must set the web task to ARM64."
+  }
+
+  assert {
+    condition     = aws_ecs_task_definition.migration.runtime_platform[0].cpu_architecture == "ARM64"
+    error_message = "cpu_architecture=ARM64 must set the migration task to ARM64."
+  }
+}
+
+run "reject_unknown_architecture" {
+  command = plan
+
+  variables {
+    cpu_architecture = "IA64"
+  }
+
+  expect_failures = [var.cpu_architecture]
 }
 
 run "reject_latest_image" {

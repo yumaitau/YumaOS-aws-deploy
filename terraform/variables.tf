@@ -33,7 +33,7 @@ variable "environment" {
 
 variable "container_image" {
   type        = string
-  description = "YumaOS OCI image pinned to a digest or immutable version tag. Floating tags are rejected."
+  description = "YumaOS OCI image pinned to a digest or immutable version tag. Listing version tags are multi-arch (linux/amd64 + linux/arm64). Floating tags are rejected."
 
   validation {
     condition = (
@@ -44,9 +44,20 @@ variable "container_image" {
   }
 }
 
+variable "cpu_architecture" {
+  type        = string
+  description = "Fargate CPU architecture. Listing tags are multi-arch (linux/amd64 + linux/arm64). X86_64 or ARM64. Both containers in the task use this value."
+  default     = "X86_64"
+
+  validation {
+    condition     = contains(["X86_64", "ARM64"], var.cpu_architecture)
+    error_message = "cpu_architecture must be X86_64 or ARM64."
+  }
+}
+
 variable "hermes_container_image" {
   type        = string
-  description = "Hermes Agent OCI image pinned to a digest or immutable version tag. Same-task sidecar."
+  description = "Hermes Agent OCI image pinned to a digest or immutable version tag. Same-task sidecar. Listing version tags are multi-arch."
 
   validation {
     condition = (
@@ -66,19 +77,19 @@ variable "container_registry_credentials_secret_arn" {
 
 variable "marketplace_product_code" {
   type        = string
-  description = "AWS Marketplace container product code from the listing. Required. Empty or omitted values fail the task; they do not disable the license check."
+  description = "Listing product code, documentary only. The image checks out its baked identity; this value cannot disable or retarget licensing."
   default     = ""
 }
 
 variable "marketplace_product_sku" {
   type        = string
-  description = "AWS Marketplace container product ID used as License Manager ProductSKU."
+  description = "Listing product ID, documentary only. License Manager ProductSKU is baked into the Marketplace image."
   default     = ""
 }
 
 variable "marketplace_public_key_version" {
   type        = number
-  description = "PublicKeyVersion from Seller Central for RegisterUsage."
+  description = "Unused by the contract listing image. Kept so existing parameter files still apply."
   default     = 1
 }
 
