@@ -1,6 +1,6 @@
 # YumaOS on AWS ECS Fargate (CloudFormation)
 
-Native CloudFormation for buyers who do not want Terraform. Same first-launch shape as the Terraform stack in this repo: VPC, ALB, one Fargate task (YumaOS web + Hermes sidecar), RDS PostgreSQL 16, ElastiCache Redis (TLS), Secrets Manager, KMS, uploads and vault buckets, and Hermes EFS.
+Native CloudFormation for buyers who do not want Terraform. Same first-launch shape as the Terraform stack in this repo: VPC, ALB, one Fargate task (YumaOS web + Hermes sidecar — the only two Marketplace images), RDS PostgreSQL 16, ElastiCache Redis (TLS), Secrets Manager, KMS, uploads and vault buckets, and Hermes EFS.
 
 Subscribe on AWS Marketplace before you create the stack. The images are Marketplace ECR, not GHCR. Pin the Region to `ap-southeast-2` so Australian Bedrock Haiku works.
 

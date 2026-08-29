@@ -2,7 +2,7 @@
 
 Public buyer artifacts for YumaOS on AWS Marketplace. Subscribe on the listing **before** you pull the images or create a stack. The publisher does not host your data.
 
-This repository is CloudFormation, Terraform, and IAM only. The application images live in AWS Marketplace ECR:
+This repository is CloudFormation, Terraform, and IAM only. The Marketplace listing ships **two** container images — the web app and Hermes. Postgres and Redis are not images; the stack creates RDS PostgreSQL 16 and ElastiCache Redis in the buyer account.
 
 ```text
 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws

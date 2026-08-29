@@ -8,9 +8,9 @@ YumaOS is a single-tenant company operating system with AI agents. You run it in
 
 ## Long description
 
-YumaOS gives one organisation a dedicated Next.js application, PostgreSQL with pgvector, Redis, object storage, and a Hermes sidecar that talks to the app over localhost. Agents can draft work. Destructive actions queue for a human who holds `agents.approve`. There is no environment variable that turns that gate off.
+YumaOS gives one organisation a dedicated Next.js application and a Hermes sidecar that talk over localhost. Agents can draft work. Destructive actions queue for a human who holds `agents.approve`. There is no environment variable that turns that gate off.
 
-The stack creates a two-AZ VPC, an Application Load Balancer, one Fargate task with YumaOS and Hermes on the same ENI, RDS PostgreSQL 16, ElastiCache Redis with TLS, KMS, Secrets Manager, an uploads bucket, a vault bucket, and encrypted EFS for Hermes home. Amazon Bedrock is pinned to Australian Haiku (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) in `ap-southeast-2`.
+The listing images are only those two containers. PostgreSQL and Redis are not shipped as images: the stack creates RDS PostgreSQL 16 (pgvector on migrate) and ElastiCache Redis with TLS in the buyer account, plus a two-AZ VPC, an Application Load Balancer, one Fargate task with YumaOS and Hermes on the same ENI, KMS, Secrets Manager, an uploads bucket, a vault bucket, and encrypted EFS for Hermes home. Amazon Bedrock is pinned to Australian Haiku (`au.anthropic.claude-haiku-4-5-20251001-v1:0`) in `ap-southeast-2`.
 
 You subscribe on AWS Marketplace, then launch from https://github.com/yumaitau/YumaOS-aws-deploy with CloudFormation or Terraform. The `docker pull` snippet AWS shows only proves the subscription can pull the images. It does not create the stack.
 

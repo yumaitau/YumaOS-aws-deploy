@@ -3,7 +3,7 @@
 1. Subscribe to YumaOS on AWS Marketplace. Wait until the subscription is active before you pull images or create a stack.
 2. Open https://github.com/yumaitau/YumaOS-aws-deploy. Use CloudFormation (`cloudformation/yumaos-fargate.yaml`) or Terraform (`terraform/`).
 3. Create the stack in **ap-southeast-2**. Australian Bedrock Haiku is not available as this listing's default in other Regions.
-4. Pin both images from Marketplace ECR. Do not use `:latest`.
+4. Pin both listing images from Marketplace ECR (web + Hermes only). Do not use `:latest`. Postgres is the RDS instance this stack creates, not a third image.
 
    ```text
    709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws

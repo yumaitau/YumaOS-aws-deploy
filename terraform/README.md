@@ -5,8 +5,8 @@ Buyer launch path: clone https://github.com/yumaitau/YumaOS-aws-deploy and start
 Terraform reference stack for a buyer-owned deployment in `ap-southeast-2`:
 
 - Two-AZ VPC with public ALB subnets, private Fargate subnets, isolated data subnets, NAT egress, and an S3 gateway endpoint.
-- One ECS Fargate `X86_64` task: YumaOS web + Hermes sidecar on the same ENI so they talk over `127.0.0.1`.
-- RDS PostgreSQL 16 and TLS-only ElastiCache Redis with no public route or public address.
+- One ECS Fargate `X86_64` task: YumaOS web + Hermes sidecar on the same ENI so they talk over `127.0.0.1`. Those are the only Marketplace listing images.
+- RDS PostgreSQL 16 and TLS-only ElastiCache Redis with no public route or public address. They are not container images.
 - KMS-encrypted, versioned, public-blocked S3 uploads and vault buckets.
 - Encrypted EFS access point for Hermes `/opt/data`.
 - Bedrock Australian Haiku pinned on the task role. No AWS access keys enter task definitions.

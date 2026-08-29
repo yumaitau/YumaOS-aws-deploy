@@ -10,9 +10,11 @@ Internet (AllowedIngressCidr)
         |
    application subnets (no public IP)
         |  ECS Fargate task (2048 CPU / 4096 MiB)
+        |    listing images only:
         |    hermes  :8642 / :9119   EFS /opt/data
         |    web     :3000           depends on hermes HEALTHY
         |    localhost only between the two
+        |    no Postgres/Redis container — those are AWS data services
         |
    isolated data subnets
         |  RDS PostgreSQL 16 (pgvector on migrate)

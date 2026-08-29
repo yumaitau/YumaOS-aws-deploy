@@ -53,6 +53,7 @@ resource "aws_ecs_task_definition" "web" {
     }
   }
 
+  # Listing images only. Postgres is RDS; Redis is ElastiCache.
   container_definitions = jsonencode([
     merge(local.hermes_hardening, local.registry_credentials, {
       name        = "hermes"

@@ -85,7 +85,7 @@ Parameters:
 
   HermesContainerImage:
     Type: String
-    Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.0"
+    Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.1"
     AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
     Description: Marketplace ECR image tag or digest for the Hermes sidecar. Do not use :latest.
 
@@ -1453,6 +1453,7 @@ Resources:
             AuthorizationConfig:
               AccessPointId: !Ref HermesAccessPoint
               IAM: ENABLED
+      # Listing images only. Postgres is RDS; Redis is ElastiCache.
       ContainerDefinitions:
         - Name: hermes
           Image: !Ref HermesContainerImage

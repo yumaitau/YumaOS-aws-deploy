@@ -44,6 +44,40 @@ run "secure_test_baseline" {
   }
 
   assert {
+    condition     = aws_db_instance.this.engine == "postgres"
+    error_message = "Application data lives in RDS PostgreSQL, not a task container."
+  }
+
+  assert {
+    condition = length(regexall("(?m)^\\s+name\\s+=\\s+\"(web|hermes)\"$", file("${path.module}/ecs.tf"))) == 2
+    error_message = "Marketplace Fargate task must declare exactly the web and hermes containers."
+  }
+
+  assert {
+    condition = !strcontains(file("${path.module}/ecs.tf"), "postgres:") && !strcontains(file("${path.module}/ecs.tf"), "pgvector") && !strcontains(file("${path.module}/ecs.tf"), "redis:")
+    error_message = "Listing task must not reference a Postgres, pgvector, or Redis container image."
+  }
+
+  assert {
+    condition = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: hermes") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: web") && !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Image: postgres")
+    error_message = "CloudFormation task must ship web and Hermes only; Postgres is RDS."
+  }
+
+  assert {
+    condition = alltrue([
+      for variable in local.common_environment : variable.name != "DATABASE_URL"
+    ])
+    error_message = "DATABASE_URL must come from Secrets Manager against RDS, not a compose hostname."
+  }
+
+  assert {
+    condition = anytrue([
+      for secret in local.common_secrets : secret.name == "DATABASE_URL"
+    ])
+    error_message = "Web container must receive DATABASE_URL from the RDS-backed secret."
+  }
+
+  assert {
     condition     = local.web_hardening.user == "nextjs"
     error_message = "Fargate web container must run as the image non-root user."
   }
