@@ -44,6 +44,7 @@ jobs:
         uses: bridgecrewio/checkov-action@v12
         with:
           config_file: .checkov.yaml
+          directory: terraform,cloudformation
           soft_fail: false
           output_format: cli,sarif
           output_file_path: console,checkov.sarif
@@ -81,7 +82,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
