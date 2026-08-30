@@ -234,6 +234,66 @@ run "secure_test_baseline" {
     condition     = aws_flow_log.this.traffic_type == "ALL"
     error_message = "VPC flow logs must capture all traffic."
   }
+
+  assert {
+    condition     = !strcontains(file("${path.module}/ecs.tf"), "curl")
+    error_message = "ECS container health checks must not use curl; listing images do not ship it."
+  }
+
+  assert {
+    condition     = strcontains(local.web_health_check_command[1], "fetch('http://127.0.0.1:3000/livez')")
+    error_message = "Web container health check must use node fetch against /livez."
+  }
+
+  assert {
+    condition     = strcontains(local.hermes_health_check_command[1], "python3") && strcontains(local.hermes_health_check_command[1], "127.0.0.1:8642/health")
+    error_message = "Hermes container health check must use python3 against localhost /health."
+  }
+
+  assert {
+    condition     = aws_ecs_service.web[0].deployment_circuit_breaker[0].enable == true
+    error_message = "Circuit breaker must stay enabled so a crashing task definition stops rolling."
+  }
+
+  assert {
+    condition     = aws_ecs_service.web[0].deployment_circuit_breaker[0].rollback == false
+    error_message = "Deployment rollback must default off. First create plus a license miss would otherwise leave zero tasks."
+  }
+
+  assert {
+    condition     = aws_ecs_service.web[0].desired_count == 1
+    error_message = "Default desired count must be 1 (MaxCount=1)."
+  }
+
+  assert {
+    condition     = !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "curl -fsS")
+    error_message = "CloudFormation container health checks must not use curl."
+  }
+
+  assert {
+    condition     = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "EnableDeploymentRollback")
+    error_message = "CloudFormation must expose first-create-safe deployment rollback."
+  }
+
+  assert {
+    condition     = !strcontains(file("${path.module}/../charts/yumaos/values.yaml"), "ghcr.io") && !strcontains(file("${path.module}/../charts/yumaos/values-aws-marketplace.yaml"), "ghcr.io")
+    error_message = "Helm defaults must be Marketplace ECR, not GHCR."
+  }
+
+  assert {
+    condition     = !strcontains(file("${path.module}/../charts/yumaos/values.yaml"), "1.0.8") && !strcontains(file("${path.module}/../charts/yumaos/values-aws-marketplace.yaml"), "tag: \"1.0.")
+    error_message = "Helm must not pin a GRiCk version tag or a 1.0.N listing tag that may not exist."
+  }
+
+  assert {
+    condition     = strcontains(file("${path.module}/../charts/yumaos/values.yaml"), "replicaCount: 1")
+    error_message = "Helm replicaCount must default to 1."
+  }
+
+  assert {
+    condition     = strcontains(file("${path.module}/../charts/yumaos/values.yaml"), "supplementaryGroups")
+    error_message = "Web must keep supplementaryGroups so IRSA tokens remain readable under Hermes fsGroup 10000."
+  }
 }
 
 run "reject_world_open_ingress" {
@@ -311,6 +371,59 @@ run "reject_latest_image" {
   }
 
   expect_failures = [var.container_image]
+}
+
+run "reject_burned_image_1_0_0" {
+  command = plan
+
+  variables {
+    container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.0"
+  }
+
+  expect_failures = [var.container_image]
+}
+
+run "reject_burned_image_1_0_1" {
+  command = plan
+
+  variables {
+    container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.1"
+  }
+
+  expect_failures = [var.container_image]
+}
+
+run "reject_burned_image_1_0_2_arm64" {
+  command = plan
+
+  variables {
+    hermes_container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.2-arm64"
+  }
+
+  expect_failures = [var.hermes_container_image]
+}
+
+run "reject_second_task" {
+  command = plan
+
+  variables {
+    web_desired_count = 2
+  }
+
+  expect_failures = [var.web_desired_count]
+}
+
+run "enable_deployment_rollback_after_first_create" {
+  command = plan
+
+  variables {
+    enable_deployment_rollback = true
+  }
+
+  assert {
+    condition     = aws_ecs_service.web[0].deployment_circuit_breaker[0].rollback == true
+    error_message = "enable_deployment_rollback must turn rollback on for later updates."
+  }
 }
 
 run "reject_unproven_region" {

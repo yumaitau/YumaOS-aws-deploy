@@ -1,0 +1,23 @@
+YumaOS {{ .Chart.AppVersion }} in release {{ .Release.Name }}.
+
+1. replicaCount is {{ .Values.replicaCount }} and must stay 1 (MaxCount=1).
+2. Attach iam-policy.json to the IRSA / Pod Identity role on
+   {{ include "yumaos.serviceAccountName" . }}. Without it the web container
+   exits credentials_missing. Keep web supplementaryGroups 10000 so the
+   projected token stays readable under fsGroup 10000. Do not put AWS keys
+   in secretEnv.
+3. Set AWS_REGION (currently {{ index .Values.env "AWS_REGION" | default "unset" }}).
+   IRSA does not inject it. License Manager home is us-east-1; CheckoutLicense
+   from ap-southeast-2 is fine. Diagnose grants in us-east-1.
+4. Web and Hermes share this pod on 127.0.0.1. Do not split them into two
+   Deployments or point HERMES_* at the Ingress.
+5. Leave web.command empty so entrypoint.sh still runs the license gate and
+   migrate. Kubernetes command replaces Docker ENTRYPOINT.
+6. Hermes args override Docker CMD only. Do not set hermes.command — that
+   skips s6.
+7. Marketplace ECR pull tokens last 12 hours. Refresh imagePullSecret
+   marketplace-ecr or use the kubelet ECR credential provider.
+8. Pin image.tag to a sha-<7> that exists. Do not launch 1.0.0, 1.0.1, or 1.0.2.
+9. Helm does not create RDS, Redis, S3, EFS, or the ALB. Those stay buyer-owned.
+
+Open the Ingress / Service and register the first administrator.

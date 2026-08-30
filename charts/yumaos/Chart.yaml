@@ -1,0 +1,15 @@
+apiVersion: v2
+name: yumaos
+description: >
+  Helm chart for YumaOS on Amazon EKS. Web and Hermes share one pod so they
+  talk on 127.0.0.1. Helm does not create RDS, Redis, S3, EFS, or IAM.
+type: application
+version: 0.1.0
+appVersion: "listing"
+keywords:
+  - yumaos
+  - marketplace
+  - eks
+home: https://github.com/yumaitau/YumaOS-aws-deploy
+sources:
+  - https://github.com/yumaitau/YumaOS-aws-deploy

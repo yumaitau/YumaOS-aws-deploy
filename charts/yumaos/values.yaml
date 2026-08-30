@@ -1,0 +1,173 @@
+# Defaults are Marketplace ECR placeholders. Pin image.tag / hermes.image.tag
+# to a sha-<7> that already exists. Do not use latest, 1.0.0, 1.0.1, or 1.0.2.
+# Helm does not create RDS, Redis, S3, EFS, ACM, or the IRSA role.
+
+replicaCount: 1
+
+image:
+  repository: 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws
+  tag: sha-after-buyer-fargate
+  pullPolicy: IfNotPresent
+
+hermes:
+  image:
+    repository: 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes
+    tag: sha-after-buyer-fargate
+    pullPolicy: IfNotPresent
+  # Kubernetes `command` replaces Docker ENTRYPOINT (s6). Use args only.
+  args:
+    - gateway
+    - run
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  startupProbe:
+    failureThreshold: 18
+  # s6 starts as root, then drops to uid 10000. Do not set runAsNonRoot here.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - KILL
+        - SETGID
+        - SETUID
+  persistence:
+    enabled: false
+    storageClass: ""
+    size: 20Gi
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  # Token is required for IRSA / EKS Pod Identity so CheckoutLicense can run.
+  automount: true
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# Do not set runAsNonRoot at the pod level. Hermes s6 must start as root.
+# fsGroup 10000 owns Hermes home and the projected SA token. Web (uid 1001)
+# must keep supplementaryGroups: [10000] or CheckoutLicense cannot read IRSA.
+podSecurityContext:
+  fsGroup: 10000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+env:
+  NODE_ENV: production
+  HOSTNAME: "0.0.0.0"
+  PORT: "3000"
+  NEXT_TELEMETRY_DISABLED: "1"
+  CI: "1"
+  APP_NAME: YumaOS
+  APP_TIMEZONE: Australia/Sydney
+  TZ: Australia/Sydney
+  AWS_REGION: ap-southeast-2
+  AWS_DEFAULT_REGION: ap-southeast-2
+  BEDROCK_REGION: ap-southeast-2
+  BEDROCK_MODEL_ID: au.anthropic.claude-haiku-4-5-20251001-v1:0
+  BEDROCK_MODEL_CAPABLE: au.anthropic.claude-sonnet-4-6
+  POLLY_REGION: ap-southeast-2
+  HERMES_INFERENCE_PROVIDER: bedrock
+  HERMES_MODEL: au.anthropic.claude-haiku-4-5-20251001-v1:0
+  AGENT_CHAT_RUNTIME: hermes
+  AUTH_DISABLE_SIGNUP: "false"
+  BETTER_AUTH_URL: https://yumaos.example.com
+  NEXT_PUBLIC_BETTER_AUTH_URL: https://yumaos.example.com
+  STORAGE_DRIVER: s3
+  S3_BUCKET: ""
+  YUMA_VAULT_S3_BUCKET: ""
+  YUMA_VAULT_KMS_KEY_ARN: ""
+  HERMES_S3_BUCKET: ""
+  HERMES_S3_PREFIX: state
+  HERMES_S3_REGION: ap-southeast-2
+  S3_REGION: ap-southeast-2
+  S3_FORCE_PATH_STYLE: "false"
+  RUN_MIGRATE_ON_START: "1"
+  RUN_SEED: "0"
+  # Documentary only. The listing image always checks out a license.
+  AWS_MARKETPLACE_ENABLED: "true"
+  AWS_MARKETPLACE_FULFILLMENT: container
+  AWS_MARKETPLACE_PRICING_MODEL: contract
+
+secretEnv:
+  DATABASE_URL: ""
+  REDIS_URL: ""
+  BETTER_AUTH_SECRET: ""
+  ENCRYPTION_KEY: ""
+  HERMES_API_KEY: ""
+  HERMES_DASHBOARD_USER: ""
+  HERMES_DASHBOARD_PASSWORD: ""
+  HERMES_DASHBOARD_SECRET: ""
+  HERMES_STATE_ROLE_PASSWORD: ""
+  HERMES_STATE_DATABASE_URL: ""
+
+existingSecret: ""
+extraEnvFrom: []
+extraEnv: []
+
+web:
+  # Leave empty so image ENTRYPOINT (entrypoint.sh) still runs the license
+  # gate and drizzle-kit push. Setting command here replaces that entrypoint.
+  command: []
+  args: []
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  securityContext:
+    runAsUser: 1001
+    runAsGroup: 1001
+    runAsNonRoot: true
+    supplementaryGroups:
+      - 10000
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
+  # License + migrate + Hermes can exceed three minutes on first boot.
+  startupProbe:
+    path: /livez
+    periodSeconds: 10
+    failureThreshold: 36
+  readinessProbe:
+    path: /readyz
+  livenessProbe:
+    path: /livez
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: yumaos.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

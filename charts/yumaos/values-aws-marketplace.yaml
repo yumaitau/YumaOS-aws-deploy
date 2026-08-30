@@ -1,0 +1,61 @@
+# AWS Marketplace overlay for Amazon EKS.
+# Helm does not create RDS, Redis, S3, EFS, ACM, or IAM. Provision those first.
+#
+#   helm upgrade --install yumaos charts/yumaos \
+#     --namespace yumaos --create-namespace \
+#     -f charts/yumaos/values-aws-marketplace.yaml \
+#     --set env.BETTER_AUTH_URL=https://yumaos.example.com \
+#     --set env.NEXT_PUBLIC_BETTER_AUTH_URL=https://yumaos.example.com \
+#     --set env.S3_BUCKET=<uploads-bucket> \
+#     --set env.YUMA_VAULT_S3_BUCKET=<vault-bucket> \
+#     --set env.YUMA_VAULT_KMS_KEY_ARN=<kms-key-arn> \
+#     --set env.HERMES_S3_BUCKET=<hermes-state-bucket> \
+#     --set image.tag=<sha-7-that-exists> \
+#     --set hermes.image.tag=<same-sha-7> \
+#     --set serviceAccount.annotations.eks\.amazonaws\.com/role-arn=arn:aws:iam::ACCOUNT:role/yumaos \
+#     --set secretEnv.DATABASE_URL='postgresql://...' \
+#     --set secretEnv.REDIS_URL='rediss://...' \
+#     --set secretEnv.BETTER_AUTH_SECRET='...' \
+#     --set secretEnv.ENCRYPTION_KEY='...' \
+#     --set secretEnv.HERMES_API_KEY='...'
+#
+# Pin image.tag to a Marketplace ECR sha-<7> that already exists. Do not pin
+# latest, burned 1.0.0–1.0.2 tags, or a version tag that has not been created
+# from a proven multi-arch sha. Do not copy another product's listing tag.
+#
+# CheckoutLicense uses the pod IRSA role (or EKS Pod Identity). Attach
+# iam-policy.json plus S3/KMS/EFS (and ses:SendEmail if using SES).
+# automountServiceAccountToken must stay true.
+#
+# Marketplace ECR tokens last 12 hours. Create an imagePullSecret named
+# marketplace-ecr, or configure the node kubelet ECR credential provider for
+# 709825985650.dkr.ecr.us-east-1.amazonaws.com.
+
+image:
+  repository: 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws
+  tag: sha-after-buyer-fargate
+  pullPolicy: IfNotPresent
+
+hermes:
+  image:
+    repository: 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes
+    tag: sha-after-buyer-fargate
+    pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: marketplace-ecr
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT:role/yumaos
+
+replicaCount: 1
+
+env:
+  AWS_REGION: ap-southeast-2
+  AWS_DEFAULT_REGION: ap-southeast-2
+  AWS_MARKETPLACE_ENABLED: "true"
+  AWS_MARKETPLACE_FULFILLMENT: container
+  AWS_MARKETPLACE_PRICING_MODEL: contract

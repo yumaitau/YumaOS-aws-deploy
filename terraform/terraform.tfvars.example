@@ -12,6 +12,8 @@ container_image        = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/y
 hermes_container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:sha-after-buyer-fargate"
 cpu_architecture       = "X86_64"
 # cpu_architecture     = "ARM64"
+# First apply: leave rollback off. A license miss plus rollback leaves zero tasks.
+# enable_deployment_rollback = false
 
 # Required. Copy from the listing (product code + product ID). The image
 # always checks out a Marketplace license; empty values fail the task.

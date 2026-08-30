@@ -1,6 +1,6 @@
 # YumaOS on AWS ECS Fargate (CloudFormation)
 
-Native CloudFormation for buyers who do not want Terraform. Same first-launch shape as the Terraform stack in this repo: VPC, ALB, one Fargate task (YumaOS web + Hermes sidecar — the only two Marketplace images), RDS PostgreSQL 16, ElastiCache Redis (TLS), Secrets Manager, KMS, uploads and vault buckets, and Hermes EFS.
+Native CloudFormation for buyers who do not want Terraform. Same first-launch shape as the Terraform stack in this repo: VPC, ALB, one Fargate task (YumaOS web + Hermes sidecar — the only two Marketplace images), RDS PostgreSQL 16, ElastiCache Redis (TLS), Secrets Manager, KMS, uploads and vault buckets, and Hermes EFS. For Amazon EKS use [`charts/yumaos`](../charts/yumaos/README.md) instead — Helm does not create this data plane.
 
 Subscribe on AWS Marketplace before you create the stack. The images are Marketplace ECR, not GHCR. Pin the Region to `ap-southeast-2` so Australian Bedrock Haiku works.
 
@@ -34,7 +34,9 @@ aws cloudformation describe-stacks --stack-name yumaos \
   --output text
 ```
 
-The YumaOS image entrypoint waits for Postgres, runs `CREATE EXTENSION vector`, applies Drizzle, then starts. Hermes must be healthy on `127.0.0.1:8642` before the web container starts. A separate migration task definition is an output if you want an explicit pre-roll.
+The YumaOS image entrypoint waits for Postgres, runs `CREATE EXTENSION vector`, applies Drizzle, then starts. Hermes must be healthy on `127.0.0.1:8642` before the web container starts. Container health checks use `node` / `python3`, not `curl`. **WebDesiredCount** is capped at 1 (`MaxCount=1`). Leave **EnableDeploymentRollback** false on first create.
+
+A separate migration task definition is an output if you want an explicit pre-roll. The listing entrypoint owns migrate; the task command is a no-op on purpose.
 
 ## Bilateral localhost wiring
 

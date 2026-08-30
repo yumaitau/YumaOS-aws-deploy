@@ -34,6 +34,7 @@ Metadata:
         Parameters:
           - CpuArchitecture
           - WebDesiredCount
+          - EnableDeploymentRollback
       - Label:
           default: Network
         Parameters:
@@ -86,12 +87,14 @@ Parameters:
 
   ContainerImage:
     Type: String
-    AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
+    AllowedPattern: "^(?!.*:[Ll][Aa][Tt][Ee][Ss][Tt]$)(?!.*:1\\.0\\.[012](-|$)).*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
+    ConstraintDescription: Pin a sha-<7> or later 1.0.3+ tag or digest. :latest, :1.0.0, :1.0.1, and :1.0.2 are rejected.
     Description: Marketplace ECR image tag or digest for YumaOS. Required. Pin a sha-<7> that already exists. Do not use :latest. Do not launch 1.0.0, 1.0.1 (no license gate), or 1.0.2 (arm64-only, Count=1 heartbeat). Marketplace ECR does not let sellers delete those tags.
 
   HermesContainerImage:
     Type: String
-    AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
+    AllowedPattern: "^(?!.*:[Ll][Aa][Tt][Ee][Ss][Tt]$)(?!.*:1\\.0\\.[012](-|$)).*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
+    ConstraintDescription: Pin a sha-<7> or later 1.0.3+ tag or digest. :latest, :1.0.0, :1.0.1, and :1.0.2 are rejected.
     Description: Marketplace ECR image tag or digest for the Hermes sidecar. Required. Pin the same sha-<7> as ContainerImage. Do not use :latest, 1.0.0, 1.0.1, or 1.0.2.
 
   CpuArchitecture:
@@ -189,7 +192,14 @@ Parameters:
     Type: Number
     Default: 1
     MinValue: 1
-    Description: Number of web tasks.
+    MaxValue: 1
+    Description: Must stay 1. The contract dimension is MaxCount=1; a second task fails CheckoutLicense and takes the ALB down.
+
+  EnableDeploymentRollback:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: Rollback a failed ECS deployment to the previous task definition. Leave false on first create. A license miss plus rollback leaves the service at zero tasks.
 
   LogRetentionDays:
     Type: Number
@@ -204,6 +214,7 @@ Conditions:
   CacheIsHa: !Equals [!Ref CacheHighAvailability, "true"]
   WafEnabled: !Equals [!Ref EnableWaf, "true"]
   BackupEnabled: !Equals [!Ref EnableAwsBackup, "true"]
+  RollbackEnabled: !Equals [!Ref EnableDeploymentRollback, "true"]
 
 Rules:
   NoWorldOpenIngress:
@@ -1621,7 +1632,7 @@ Resources:
           HealthCheck:
             Command:
               - CMD-SHELL
-              - curl -fsS http://127.0.0.1:8642/health >/dev/null || exit 1
+              - python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8642/health', timeout=4)"
             Interval: 30
             Timeout: 5
             Retries: 5
@@ -1782,7 +1793,7 @@ Resources:
           HealthCheck:
             Command:
               - CMD-SHELL
-              - curl -fsS http://127.0.0.1:3000/livez >/dev/null || exit 1
+              - node -e "fetch('http://127.0.0.1:3000/livez').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
             Interval: 30
             Timeout: 5
             Retries: 3
@@ -1818,10 +1829,12 @@ Resources:
             Capabilities:
               Drop:
                 - ALL
+          # Listing entrypoint.sh runs the license gate and drizzle-kit push,
+          # then execs this command. A no-op is correct.
           Command:
-            - sh
-            - -c
-            - echo yumaos-migrate-complete
+            - node
+            - -e
+            - console.log('yumaos-migrate-complete')
           Environment:
             - Name: NODE_ENV
               Value: production
@@ -1873,7 +1886,7 @@ Resources:
       DeploymentConfiguration:
         DeploymentCircuitBreaker:
           Enable: true
-          Rollback: true
+          Rollback: !If [RollbackEnabled, true, false]
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED

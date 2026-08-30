@@ -70,7 +70,7 @@ resource "aws_ecs_task_definition" "web" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -fsS http://127.0.0.1:8642/health >/dev/null || exit 1"]
+        command     = local.hermes_health_check_command
         interval    = 30
         timeout     = 5
         retries     = 5
@@ -107,7 +107,7 @@ resource "aws_ecs_task_definition" "web" {
       environment = concat(local.common_environment, local.ses_environment, local.marketplace_environment)
       secrets     = local.common_secrets
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/livez >/dev/null || exit 1"]
+        command     = local.web_health_check_command
         interval    = 30
         timeout     = 5
         retries     = 3
@@ -148,10 +148,12 @@ resource "aws_ecs_task_definition" "migration" {
 
   container_definitions = jsonencode([
     merge(local.web_hardening, local.registry_credentials, {
+      # Listing entrypoint.sh runs the license gate and drizzle-kit push, then
+      # execs this command. A no-op is correct: migrate is not a second image.
       name        = "migration"
       image       = var.container_image
       essential   = true
-      command     = ["sh", "-c", "echo yumaos-migrate-complete"]
+      command     = ["node", "-e", "console.log('yumaos-migrate-complete')"]
       environment = concat(local.common_environment, local.ses_environment, local.marketplace_environment)
       secrets     = local.common_secrets
       logConfiguration = {
@@ -189,7 +191,7 @@ resource "aws_ecs_service" "web" {
 
   deployment_circuit_breaker {
     enable   = true
-    rollback = true
+    rollback = var.enable_deployment_rollback
   }
 
   network_configuration {

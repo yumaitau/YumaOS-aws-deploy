@@ -33,14 +33,15 @@ variable "environment" {
 
 variable "container_image" {
   type        = string
-  description = "YumaOS OCI image pinned to a digest or immutable version tag. Listing version tags are multi-arch (linux/amd64 + linux/arm64). Floating tags are rejected."
+  description = "YumaOS OCI image pinned to a digest or immutable version tag. Listing version tags are multi-arch (linux/amd64 + linux/arm64). Floating tags and burned Marketplace tags are rejected."
 
   validation {
     condition = (
       can(regex("(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$", var.container_image)) &&
-      !can(regex(":[Ll][Aa][Tt][Ee][Ss][Tt]$", var.container_image))
+      !can(regex(":[Ll][Aa][Tt][Ee][Ss][Tt]$", var.container_image)) &&
+      !can(regex(":1\\.0\\.[012](-|$)", var.container_image))
     )
-    error_message = "container_image must end in an immutable tag or sha256 digest; floating tags are not allowed."
+    error_message = "container_image must be an immutable tag or sha256 digest. Do not use :latest, :1.0.0, :1.0.1, or :1.0.2."
   }
 }
 
@@ -62,9 +63,10 @@ variable "hermes_container_image" {
   validation {
     condition = (
       can(regex("(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$", var.hermes_container_image)) &&
-      !can(regex(":[Ll][Aa][Tt][Ee][Ss][Tt]$", var.hermes_container_image))
+      !can(regex(":[Ll][Aa][Tt][Ee][Ss][Tt]$", var.hermes_container_image)) &&
+      !can(regex(":1\\.0\\.[012](-|$)", var.hermes_container_image))
     )
-    error_message = "hermes_container_image must end in an immutable tag or sha256 digest; floating tags are not allowed."
+    error_message = "hermes_container_image must be an immutable tag or sha256 digest. Do not use :latest, :1.0.0, :1.0.1, or :1.0.2."
   }
 }
 
@@ -154,13 +156,19 @@ variable "enable_services" {
 
 variable "web_desired_count" {
   type        = number
-  description = "Number of web+Hermes tasks."
+  description = "Number of web+Hermes tasks. Must stay 1: the contract dimension is MaxCount=1."
   default     = 1
 
   validation {
-    condition     = var.web_desired_count >= 1
-    error_message = "web_desired_count must be at least 1."
+    condition     = var.web_desired_count == 1
+    error_message = "web_desired_count must be 1. A second task fails CheckoutLicense (MaxCount=1) and takes the ALB down."
   }
+}
+
+variable "enable_deployment_rollback" {
+  type        = bool
+  description = "Rollback a failed ECS deployment to the previous task definition. Leave false on first apply — a license miss plus rollback leaves the service at zero tasks."
+  default     = false
 }
 
 variable "web_cpu" {

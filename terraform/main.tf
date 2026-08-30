@@ -174,4 +174,17 @@ locals {
       credentialsParameter = var.container_registry_credentials_secret_arn
     }
   }
+
+  # Listing images do not ship curl. Web is wolfi + node; Hermes has python3.
+  # ECS container health checks run inside the container, so they must use a
+  # binary that exists. Kubernetes httpGet probes are kubelet-side and do not
+  # have this constraint.
+  web_health_check_command = [
+    "CMD-SHELL",
+    "node -e \"fetch('http://127.0.0.1:3000/livez').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+  ]
+  hermes_health_check_command = [
+    "CMD-SHELL",
+    "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8642/health', timeout=4)\"",
+  ]
 }
