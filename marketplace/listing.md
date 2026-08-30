@@ -14,7 +14,7 @@ The listing images are only those two containers. PostgreSQL and Redis are not s
 
 You subscribe on AWS Marketplace, then launch from https://github.com/yumaitau/YumaOS-aws-deploy with CloudFormation or Terraform. The `docker pull` snippet AWS shows only proves the subscription can pull the images. It does not create the stack.
 
-The YumaOS web image requires a current AWS Marketplace contract entitlement. It calls AWS License Manager `CheckoutLicense` at start and every 15 minutes. Hermes is a public sidecar and is not license-gated. Copying the web image, changing environment variables, or cancelling the subscription does not keep YumaOS usable. Product identity is baked at image build; stack parameters cannot disable or retarget that check.
+The YumaOS web image requires a current AWS Marketplace contract entitlement. It consumes one `standard_deployment` seat at start and revalidates every 15 minutes with `AWS::Marketplace::Usage` so the heartbeat does not consume another unit. Hermes is a public sidecar and is not license-gated. Copying the web image, changing environment variables, or cancelling the subscription does not keep YumaOS usable. Product identity is baked at image build; stack parameters cannot disable or retarget that check.
 
 First visitor registers. Then lock public signup if you want. Support: https://os.yumait.com.au/contact
 

@@ -86,15 +86,13 @@ Parameters:
 
   ContainerImage:
     Type: String
-    Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.1"
     AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
-    Description: Marketplace ECR image tag or digest for YumaOS. Do not use :latest. Do not launch 1.0.0 or 1.0.1 — those images have no license gate. AWS Marketplace ECR does not let sellers delete them; pin a post-#167 tag that contains marketplace-gate.cjs.
+    Description: Marketplace ECR image tag or digest for YumaOS. Required. Pin a sha-<7> that already exists. Do not use :latest. Do not launch 1.0.0, 1.0.1 (no license gate), or 1.0.2 (arm64-only, Count=1 heartbeat). Marketplace ECR does not let sellers delete those tags.
 
   HermesContainerImage:
     Type: String
-    Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.1"
     AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
-    Description: Marketplace ECR image tag or digest for the Hermes sidecar. Listing tags are multi-arch. Do not use :latest.
+    Description: Marketplace ECR image tag or digest for the Hermes sidecar. Required. Pin the same sha-<7> as ContainerImage. Do not use :latest, 1.0.0, 1.0.1, or 1.0.2.
 
   CpuArchitecture:
     Type: String

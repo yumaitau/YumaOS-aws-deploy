@@ -8,7 +8,7 @@ Subscribe on AWS Marketplace before you create the stack. The images are Marketp
 
 1. Open CloudFormation in `ap-southeast-2`.
 2. Create stack → With new resources → Upload a template file → `yumaos-fargate.yaml`.
-3. Pin **Container image** and **Hermes container image** to this listing tag or digest. Listing tags are multi-arch (`linux/amd64` + `linux/arm64`). Set **CPU architecture** to `X86_64` or `ARM64` (Graviton). Product identity is baked into those images. **Marketplace product code** / **product ID** on the stack are documentary and cannot disable licensing.
+3. Pin **Container image** and **Hermes container image** to a Marketplace ECR `sha-<7>` that already exists. Do not use `1.0.0`, `1.0.1`, or `1.0.2`. Listing tags are multi-arch (`linux/amd64` + `linux/arm64`). Set **CPU architecture** to `X86_64` or `ARM64` (Graviton). Product identity is baked into those images. **Marketplace product code** / **product ID** on the stack are documentary and cannot disable licensing.
 4. Set **Allowed ingress CIDR** to your office, VPN, or client range. Leave **Allow internet ingress** false. `0.0.0.0/0` is rejected unless that flag is true.
 5. Leave **ACM certificate ARN** and **SES From** empty for a first HTTP launch without mail.
 6. Acknowledge IAM capabilities. Create.

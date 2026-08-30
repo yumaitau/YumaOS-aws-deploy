@@ -54,22 +54,22 @@ run "secure_test_baseline" {
   }
 
   assert {
-    condition = length(regexall("(?m)^\\s+name\\s+=\\s+\"(web|hermes)\"$", file("${path.module}/ecs.tf"))) == 2
+    condition     = length(regexall("(?m)^\\s+name\\s+=\\s+\"(web|hermes)\"$", file("${path.module}/ecs.tf"))) == 2
     error_message = "Marketplace Fargate task must declare exactly the web and hermes containers."
   }
 
   assert {
-    condition = !strcontains(file("${path.module}/ecs.tf"), "postgres:") && !strcontains(file("${path.module}/ecs.tf"), "pgvector") && !strcontains(file("${path.module}/ecs.tf"), "redis:")
+    condition     = !strcontains(file("${path.module}/ecs.tf"), "postgres:") && !strcontains(file("${path.module}/ecs.tf"), "pgvector") && !strcontains(file("${path.module}/ecs.tf"), "redis:")
     error_message = "Listing task must not reference a Postgres, pgvector, or Redis container image."
   }
 
   assert {
-    condition = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: hermes") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: web") && !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Image: postgres")
+    condition     = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: hermes") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Name: web") && !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "Image: postgres")
     error_message = "CloudFormation task must ship web and Hermes only; Postgres is RDS."
   }
 
   assert {
-    condition = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "CpuArchitecture: !Ref CpuArchitecture") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "- ARM64")
+    condition     = strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "CpuArchitecture: !Ref CpuArchitecture") && strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "- ARM64")
     error_message = "CloudFormation must let the buyer choose X86_64 or ARM64."
   }
 

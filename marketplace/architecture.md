@@ -29,7 +29,7 @@ Internet (AllowedIngressCidr)
 
 ## Licensing
 
-This is a container contract listing. The YumaOS web image calls AWS License Manager `CheckoutLicense` (`PROVISIONAL`, dimension `standard_deployment`) using the product identity baked at image build. Hermes is a public sidecar and is not license-gated. The task role needs the License Manager actions AWS documents; `Resource: *` is required by those APIs. Task-definition environment variables cannot turn the web check off.
+This is a container contract listing. The YumaOS web image calls AWS License Manager `CheckoutLicense` (`PROVISIONAL`, dimension `standard_deployment`, `Count=1`) at start using the product identity baked at image build. The 15-minute heartbeat checks `AWS::Marketplace::Usage` (`Unit=None`) with a different ClientToken so it does not draw a second `MaxCount=1` unit. Hermes is a public sidecar and is not license-gated. The task role needs the License Manager actions AWS documents; `Resource: *` is required by those APIs. Task-definition environment variables cannot turn the web check off.
 
 ## Why one task
 
