@@ -4,6 +4,8 @@ environment     = "prod"
 # Pin both images to this listing's tag or, better, the listing digest.
 # Version tags are multi-arch (linux/amd64 + linux/arm64). Use :tag-amd64
 # or :tag-arm64 only when you want to pin one architecture.
+# Do not launch 1.0.0 or 1.0.1 — those web images have no license gate.
+# AWS Marketplace ECR does not let sellers delete them.
 container_image        = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.1"
 hermes_container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.1"
 cpu_architecture       = "X86_64"

@@ -88,7 +88,7 @@ Parameters:
     Type: String
     Default: "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.1"
     AllowedPattern: ".*(@sha256:[0-9a-f]{64}|:[A-Za-z0-9][A-Za-z0-9_.-]{0,127})$"
-    Description: Marketplace ECR image tag or digest for YumaOS. Listing tags are multi-arch (linux/amd64 + linux/arm64). Do not use :latest.
+    Description: Marketplace ECR image tag or digest for YumaOS. Do not use :latest. Do not launch 1.0.0 or 1.0.1 — those images have no license gate. AWS Marketplace ECR does not let sellers delete them; pin a post-#167 tag that contains marketplace-gate.cjs.
 
   HermesContainerImage:
     Type: String
