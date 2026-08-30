@@ -131,6 +131,10 @@ spec:
           volumeMounts:
             - name: hermes-home
               mountPath: /opt/data
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /run
         - name: web
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -189,6 +193,15 @@ spec:
             {{- toYaml .Values.web.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.web.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+            - name: nextjs-home
+              mountPath: /home/nextjs
+            - name: app-storage
+              mountPath: /app/storage
       volumes:
         - name: hermes-home
           {{- if .Values.hermes.persistence.enabled }}
@@ -197,6 +210,16 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        - name: tmp
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: next-cache
+          emptyDir: {}
+        - name: nextjs-home
+          emptyDir: {}
+        - name: app-storage
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

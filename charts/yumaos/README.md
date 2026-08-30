@@ -85,6 +85,7 @@ helm upgrade --install yumaos charts/yumaos \
   --set secretEnv.REDIS_URL='rediss://...' \
   --set secretEnv.BETTER_AUTH_SECRET='...' \
   --set secretEnv.ENCRYPTION_KEY='...' \
+  --set secretEnv.YUMA_VAULT_KMS_KEY_ARN='...' \
   --set secretEnv.HERMES_API_KEY='...'
 ```
 
@@ -94,7 +95,8 @@ multi-arch sha.
 
 Leave `web.command` empty. Kubernetes `command` replaces Docker ENTRYPOINT, so
 setting it skips `entrypoint.sh` (license gate + migrate). Hermes uses `args`
-only so s6 still starts.
+only so s6 still starts. Both containers use a read-only root filesystem;
+writable paths are emptyDir (and Hermes `/opt/data`).
 
 ## Probes
 

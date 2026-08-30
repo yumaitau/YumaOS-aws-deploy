@@ -28,9 +28,10 @@ hermes:
   startupProbe:
     failureThreshold: 18
   # s6 starts as root, then drops to uid 10000. Do not set runAsNonRoot here.
+  # Writable paths are emptyDir / EFS mounts; the container root stays read-only.
   securityContext:
     allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
     capabilities:
       drop:
         - ALL
@@ -91,8 +92,8 @@ env:
   STORAGE_DRIVER: s3
   S3_BUCKET: ""
   YUMA_VAULT_S3_BUCKET: ""
-  YUMA_VAULT_KMS_KEY_ARN: ""
   HERMES_S3_BUCKET: ""
+  NPM_CONFIG_CACHE: /tmp/.npm
   HERMES_S3_PREFIX: state
   HERMES_S3_REGION: ap-southeast-2
   S3_REGION: ap-southeast-2
@@ -115,6 +116,7 @@ secretEnv:
   HERMES_DASHBOARD_SECRET: ""
   HERMES_STATE_ROLE_PASSWORD: ""
   HERMES_STATE_DATABASE_URL: ""
+  YUMA_VAULT_KMS_KEY_ARN: ""
 
 existingSecret: ""
 extraEnvFrom: []
@@ -139,7 +141,7 @@ web:
     supplementaryGroups:
       - 10000
     allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
     capabilities:
       drop:
         - ALL
