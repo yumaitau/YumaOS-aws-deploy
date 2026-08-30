@@ -31,9 +31,11 @@ Internet (AllowedIngressCidr)
 
 This is a container contract listing. The YumaOS web image calls AWS License Manager `CheckoutLicense` (`PROVISIONAL`, dimension `standard_deployment`, `Count=1`) at start using the product identity baked at image build. The 15-minute heartbeat checks `AWS::Marketplace::Usage` (`Unit=None`) with a different ClientToken so it does not draw a second `MaxCount=1` unit. Hermes is a public sidecar and is not license-gated. The task role needs the License Manager actions AWS documents; `Resource: *` is required by those APIs. Task-definition environment variables cannot turn the web check off.
 
-## Why one task
+## Why one task (or one pod)
 
-Hermes and YumaOS must call each other without crossing the public ALB. On Fargate that means the same `awsvpc` ENI and `127.0.0.1`. Compose can use `http://app:3000`; this stack must not.
+Hermes and YumaOS must call each other without crossing the public ALB. On Fargate that means the same `awsvpc` ENI and `127.0.0.1`. On EKS that means **one pod, two containers**. Compose can use `http://app:3000`; this stack must not. `desired_count` / `replicaCount` stay 1 because `standard_deployment` is `MaxCount=1`.
+
+ECS container health checks run inside the image and use `node` / `python3`. Kubernetes `httpGet` probes are kubelet-side. On EKS, `CheckoutLicense` uses the ServiceAccount IRSA / Pod Identity role, not an ECS task role. Marketplace ECR is not the cluster's own registry; pull tokens last 12 hours.
 
 ## Model
 

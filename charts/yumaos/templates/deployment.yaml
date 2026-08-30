@@ -1,0 +1,252 @@
+{{- include "yumaos.validate" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yumaos.fullname" . }}
+  labels:
+    {{- include "yumaos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "yumaos.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        {{- include "yumaos.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "yumaos.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: hermes
+          image: "{{ .Values.hermes.image.repository }}:{{ .Values.hermes.image.tag }}"
+          imagePullPolicy: {{ .Values.hermes.image.pullPolicy }}
+          {{- with .Values.hermes.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: hermes
+              containerPort: 8642
+              protocol: TCP
+            - name: dashboard
+              containerPort: 9119
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "yumaos.fullname" . }}-config
+          env:
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: HOME
+              value: /opt/data
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: "0.0.0.0"
+            - name: API_SERVER_PORT
+              value: "8642"
+            - name: HERMES_DASHBOARD
+              value: "1"
+            - name: HERMES_INFERENCE_PROVIDER
+              value: bedrock
+            - name: HERMES_UID
+              value: "10000"
+            - name: HERMES_GID
+              value: "10000"
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "yumaos.secretName" . }}
+                  key: HERMES_API_KEY
+            - name: HERMES_DASHBOARD_BASIC_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "yumaos.secretName" . }}
+                  key: HERMES_DASHBOARD_USER
+            - name: HERMES_DASHBOARD_BASIC_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "yumaos.secretName" . }}
+                  key: HERMES_DASHBOARD_PASSWORD
+            - name: HERMES_DASHBOARD_BASIC_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "yumaos.secretName" . }}
+                  key: HERMES_DASHBOARD_SECRET
+            - name: HERMES_STATE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "yumaos.secretName" . }}
+                  key: HERMES_STATE_DATABASE_URL
+                  optional: true
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: hermes
+            periodSeconds: 10
+            timeoutSeconds: 4
+            failureThreshold: {{ .Values.hermes.startupProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: hermes
+            periodSeconds: 10
+            timeoutSeconds: 4
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: hermes
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.hermes.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.hermes.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: hermes-home
+              mountPath: /opt/data
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /run
+        - name: web
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.web.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.web.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "yumaos.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yumaos.secretName" . }}
+            {{- with .Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: HERMES_URL
+              value: http://127.0.0.1:8642
+            - name: HERMES_DASHBOARD_URL
+              value: http://127.0.0.1:9119
+            - name: HERMES_YUMAOS_MCP_URL
+              value: http://127.0.0.1:3000/api/hermes/mcp
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.web.startupProbe.path }}
+              port: http
+            periodSeconds: {{ .Values.web.startupProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: {{ .Values.web.startupProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.web.readinessProbe.path }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.web.livenessProbe.path }}
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.web.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+            - name: nextjs-home
+              mountPath: /home/nextjs
+            - name: app-storage
+              mountPath: /app/storage
+      volumes:
+        - name: hermes-home
+          {{- if .Values.hermes.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "yumaos.fullname" . }}-hermes
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: next-cache
+          emptyDir: {}
+        - name: nextjs-home
+          emptyDir: {}
+        - name: app-storage
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.hermes.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "yumaos.fullname" . }}-hermes
+  labels:
+    {{- include "yumaos.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.hermes.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.hermes.persistence.size }}
+{{- end }}

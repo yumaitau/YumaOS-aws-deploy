@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   fmt-validate:
-    name: Terraform fmt and validate
+    name: Terraform and Helm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +19,10 @@ jobs:
           persist-credentials: false
 
       - uses: hashicorp/setup-terraform@v3
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
 
       - name: Terraform fmt
         run: terraform fmt -check -recursive
@@ -28,6 +32,20 @@ jobs:
         run: |
           terraform init -backend=false
           terraform validate
+
+      - name: Helm lint
+        run: helm lint charts/yumaos
+
+      - name: Helm template marketplace overlay
+        run: |
+          helm template yumaos charts/yumaos \
+            -f charts/yumaos/values-aws-marketplace.yaml \
+            --set secretEnv.DATABASE_URL='postgresql://user:pass@db:5432/yumaos' \
+            --set secretEnv.HERMES_API_KEY='test-hermes' \
+            --set secretEnv.HERMES_DASHBOARD_USER='dash' \
+            --set secretEnv.HERMES_DASHBOARD_PASSWORD='dash-pass' \
+            --set secretEnv.HERMES_DASHBOARD_SECRET='dash-secret' \
+            >/dev/null
 
   checkov:
     name: Checkov
@@ -154,3 +172,17 @@ jobs:
         with:
           sarif_file: trivy-cloudformation.sarif
           category: trivy-config-cloudformation
+
+      - name: Scan charts config
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: charts
+          format: sarif
+          output: trivy-charts.sarif
+
+      - name: Upload charts config results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-charts.sarif
+          category: trivy-config-charts

@@ -8,6 +8,7 @@ framework:
 download-external-modules: false
 skip-path:
   - terraform/.terraform
+  - charts
 # Residual checks that stay buyer-optional or would break first-launch.
 # Ingress 0.0.0.0/0 is not skipped — it is rejected unless explicitly opted in.
 skip-check:

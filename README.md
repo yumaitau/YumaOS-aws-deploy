@@ -2,7 +2,7 @@
 
 Public buyer artifacts for YumaOS on AWS Marketplace. Subscribe on the listing **before** you pull the images or create a stack. The publisher does not host your data.
 
-This repository is CloudFormation, Terraform, and IAM only. The Marketplace listing ships **two** container images — the web app and Hermes. Postgres and Redis are not images; the stack creates RDS PostgreSQL 16 and ElastiCache Redis in the buyer account.
+This repository is CloudFormation, Terraform, Helm, and IAM. The Marketplace listing ships **two** container images — the web app and Hermes. Postgres and Redis are not images; the ECS/CloudFormation stacks create RDS PostgreSQL 16 and ElastiCache Redis in the buyer account. Helm expects you to provision that data plane yourself.
 
 ```text
 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws
@@ -57,7 +57,26 @@ The listing image requires a current AWS Marketplace entitlement. Copying the im
 
 First visitor registers (signup is open). Then set `AUTH_DISABLE_SIGNUP=true` in a follow-up if you want to lock public registration. No seed admin is baked into the image.
 
+`web_desired_count` must stay **1**. The contract dimension is `MaxCount=1`; a second task fails `CheckoutLicense` and the ALB goes empty. Leave `enable_deployment_rollback` false on first apply — a license miss plus rollback leaves the service at zero tasks.
+
+Container health checks do not use `curl`. The listing web image is wolfi (node + `fetch`); Hermes has `python3`. Kubernetes `httpGet` probes are kubelet-side and do not need either binary.
+
 Full variable notes: [`terraform/README.md`](terraform/README.md).
+
+## Amazon EKS — Helm
+
+```sh
+helm upgrade --install yumaos charts/yumaos \
+  --namespace yumaos --create-namespace \
+  -f charts/yumaos/values-aws-marketplace.yaml \
+  --set image.tag=<sha-7-that-exists> \
+  --set hermes.image.tag=<same-sha-7> \
+  --set serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=arn:aws:iam::ACCOUNT:role/yumaos
+```
+
+Web and Hermes share **one pod** so they keep talking on `127.0.0.1`. `replicaCount` cannot exceed 1. CheckoutLicense uses the pod IRSA / EKS Pod Identity role — attach [`iam-policy.json`](iam-policy.json) plus S3/KMS. Set `AWS_REGION`. Leave web `supplementaryGroups: [10000]` so the projected token stays readable under Hermes `fsGroup`. Marketplace ECR pull tokens last 12 hours.
+
+Details: [`charts/yumaos/README.md`](charts/yumaos/README.md).
 
 ## Health
 
@@ -88,7 +107,7 @@ Empty the uploads and vault buckets first if objects exist.
 
 ## CI
 
-Pushes and pull requests to `main` run [`.github/workflows/security.yml`](.github/workflows/security.yml): Terraform fmt and validate, Checkov, Gitleaks, and Trivy.
+Pushes and pull requests to `main` run [`.github/workflows/security.yml`](.github/workflows/security.yml): Terraform fmt and validate, Helm lint, Checkov, Gitleaks, and Trivy.
 
 ## Support
 
