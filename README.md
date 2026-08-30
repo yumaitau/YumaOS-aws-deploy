@@ -46,7 +46,8 @@ Details: [`cloudformation/README.md`](cloudformation/README.md). Seller Central 
 ```sh
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# pin both images; set marketplace codes; set allowed_ingress_cidrs
+# pin both images to a Marketplace ECR sha-<7> that exists (not 1.0.0, 1.0.1, or 1.0.2)
+# set marketplace codes; set allowed_ingress_cidrs
 terraform init
 terraform apply -var-file=terraform.tfvars
 terraform output application_url
@@ -84,6 +85,10 @@ YUMAOS_ALLOW_DESTROY=yes ./destroy.sh -var-file=terraform.tfvars
 ```
 
 Empty the uploads and vault buckets first if objects exist.
+
+## CI
+
+Pushes and pull requests to `main` run [`.github/workflows/security.yml`](.github/workflows/security.yml): Terraform fmt and validate, Checkov, Gitleaks, and Trivy.
 
 ## Support
 

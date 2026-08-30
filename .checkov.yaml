@@ -31,3 +31,4 @@ skip-check:
   - CKV_AWS_250 # Hermes s6 must start as root then drop to uid 10000
   - CKV_ECS_8 # same Hermes s6 bootstrap
   - CKV_AWS_382 # Hermes needs SETUID/SETGID/CHOWN after drop-all
+  - CKV_AWS_356 # License Manager consumption APIs have no resource ARNs

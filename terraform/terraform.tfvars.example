@@ -1,13 +1,15 @@
 aws_region      = "ap-southeast-2"
 name_prefix     = "yumaos"
 environment     = "prod"
-# Pin both images to this listing's tag or, better, the listing digest.
-# Version tags are multi-arch (linux/amd64 + linux/arm64). Use :tag-amd64
-# or :tag-arm64 only when you want to pin one architecture.
-# Do not launch 1.0.0 or 1.0.1 — those web images have no license gate.
-# AWS Marketplace ECR does not let sellers delete them.
-container_image        = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:1.0.1"
-hermes_container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:1.0.1"
+# Pin both images to a Marketplace ECR tag that already exists.
+# After buyer Fargate on a multi-arch sha-<7> passes, pin that sha (or the
+# 1.0.3+ version tag created from it). Version tags are multi-arch
+# (linux/amd64 + linux/arm64). Use :tag-amd64 or :tag-arm64 only when you
+# want to pin one architecture.
+# Do not launch 1.0.0 or 1.0.1 (no license gate) or 1.0.2 (arm64-only,
+# Count=1 heartbeat). AWS Marketplace ECR does not let sellers delete them.
+container_image        = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws:sha-after-buyer-fargate"
+hermes_container_image = "709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes:sha-after-buyer-fargate"
 cpu_architecture       = "X86_64"
 # cpu_architecture     = "ARM64"
 

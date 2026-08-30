@@ -17,7 +17,7 @@ Terraform reference stack for a buyer-owned deployment in `ap-southeast-2`:
 - Terraform 1.8 or newer.
 - AWS CLI authenticated to the intended account.
 - Buyer account Bedrock access for `au.anthropic.claude-haiku-4-5-20251001-v1:0` in `ap-southeast-2`.
-- Immutable listing tags containing `linux/amd64` and `linux/arm64`. Set `cpu_architecture` to `X86_64` or `ARM64`.
+- Immutable listing tags containing `linux/amd64` and `linux/arm64`. Pin a `sha-<7>` that already exists. Do not use `1.0.0`, `1.0.1`, or `1.0.2`. Set `cpu_architecture` to `X86_64` or `ARM64`.
 - The listing images require a current Marketplace contract entitlement. Terraform variables cannot disable that check.
 
 Never put secrets in `terraform.tfvars`. Terraform state contains generated database/application secrets; use an encrypted remote backend for production.
