@@ -1267,12 +1267,19 @@ Resources:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
                   - bedrock:GetInferenceProfile
-                  - bedrock:ListInferenceProfiles
                 Resource:
-                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0
-                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/au.anthropic.claude-haiku-4-5-20251001-v1:0
-                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/anthropic.claude-sonnet-4-6*
-                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/au.anthropic.claude-sonnet-4-6*
+                  - !Sub arn:${AWS::Partition}:bedrock:ap-southeast-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0
+                  - !Sub arn:${AWS::Partition}:bedrock:ap-southeast-4::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0
+                  - !Sub arn:${AWS::Partition}:bedrock:ap-southeast-2::foundation-model/anthropic.claude-sonnet-4-6*
+                  - !Sub arn:${AWS::Partition}:bedrock:ap-southeast-4::foundation-model/anthropic.claude-sonnet-4-6*
+                  - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/au.anthropic.*
+              - Sid: AmazonBedrockDiscover
+                Effect: Allow
+                Action:
+                  - bedrock:ListFoundationModels
+                  - bedrock:ListInferenceProfiles
+                  - bedrock:GetFoundationModel
+                Resource: "*"
               - Sid: AmazonPolly
                 Effect: Allow
                 Action:
@@ -1603,6 +1610,8 @@ Resources:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: AWS_DEFAULT_REGION
+              Value: !Ref AWS::Region
+            - Name: BEDROCK_REGION
               Value: !Ref AWS::Region
             - Name: APP_TIMEZONE
               Value: Australia/Sydney

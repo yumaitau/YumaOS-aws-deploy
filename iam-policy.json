@@ -19,15 +19,25 @@
       "Action": [
         "bedrock:InvokeModel",
         "bedrock:InvokeModelWithResponseStream",
-        "bedrock:GetInferenceProfile",
-        "bedrock:ListInferenceProfiles"
+        "bedrock:GetInferenceProfile"
       ],
       "Resource": [
         "arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-        "arn:aws:bedrock:ap-southeast-2:*:inference-profile/au.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:ap-southeast-4::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
         "arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-sonnet-4-6*",
-        "arn:aws:bedrock:ap-southeast-2:*:inference-profile/au.anthropic.claude-sonnet-4-6*"
+        "arn:aws:bedrock:ap-southeast-4::foundation-model/anthropic.claude-sonnet-4-6*",
+        "arn:aws:bedrock:ap-southeast-2:*:inference-profile/au.anthropic.*"
       ]
+    },
+    {
+      "Sid": "AmazonBedrockDiscover",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:ListFoundationModels",
+        "bedrock:ListInferenceProfiles",
+        "bedrock:GetFoundationModel"
+      ],
+      "Resource": "*"
     }
   ]
 }

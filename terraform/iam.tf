@@ -69,7 +69,7 @@ resource "aws_iam_role" "task" {
 
 data "aws_iam_policy_document" "task" {
   # checkov:skip=CKV_AWS_111:Polly DescribeVoices has no resource ARN
-  # checkov:skip=CKV_AWS_356:Marketplace License Manager APIs require Resource *
+  # checkov:skip=CKV_AWS_356:License Manager and Bedrock List* have no resource ARN
   statement {
     sid       = "ListUploadsBucket"
     effect    = "Allow"
@@ -149,14 +149,19 @@ data "aws_iam_policy_document" "task" {
       "bedrock:InvokeModel",
       "bedrock:InvokeModelWithResponseStream",
       "bedrock:GetInferenceProfile",
+    ]
+    resources = local.au_bedrock_invoke_resources
+  }
+
+  statement {
+    sid    = "AmazonBedrockDiscover"
+    effect = "Allow"
+    actions = [
+      "bedrock:ListFoundationModels",
       "bedrock:ListInferenceProfiles",
+      "bedrock:GetFoundationModel",
     ]
-    resources = [
-      "arn:${data.aws_partition.current.partition}:bedrock:${var.aws_region}::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-      "arn:${data.aws_partition.current.partition}:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/au.anthropic.claude-haiku-4-5-20251001-v1:0",
-      "arn:${data.aws_partition.current.partition}:bedrock:${var.aws_region}::foundation-model/anthropic.claude-sonnet-4-6*",
-      "arn:${data.aws_partition.current.partition}:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/au.anthropic.claude-sonnet-4-6*",
-    ]
+    resources = ["*"]
   }
 
   statement {

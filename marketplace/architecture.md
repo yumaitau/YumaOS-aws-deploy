@@ -43,7 +43,7 @@ ECS container health checks run inside the image and use `node` / `python3`. Kub
 `HERMES_MODEL` / `BEDROCK_MODEL_ID` = `au.anthropic.claude-haiku-4-5-20251001-v1:0`
 `BEDROCK_MODEL_CAPABLE` = `au.anthropic.claude-sonnet-4-6`
 
-The task role is scoped to those Australian inference profiles. The buyer enables model access in the Bedrock console.
+The task role may invoke only `au.anthropic.*` inference profiles. Foundation-model invoke is limited to Sydney (`ap-southeast-2`) and Melbourne (`ap-southeast-4`) — that is the AU CRIS destination set. `us.`, `eu.`, `jp.`, and `global.` profiles are not on the role. Terraform rejects a `bedrock_model_id` that does not start with `au.`. The buyer still enables Anthropic model access in the Bedrock console (one-time use-case form). Hermes reads `model.default` from EFS `config.yaml`; the listing image copies `HERMES_MODEL` into that file on start and refuses a non-`au.` id.
 
 ## Secrets
 
