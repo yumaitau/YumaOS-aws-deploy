@@ -85,6 +85,7 @@ env:
   POLLY_REGION: ap-southeast-2
   HERMES_INFERENCE_PROVIDER: bedrock
   HERMES_MODEL: au.anthropic.claude-haiku-4-5-20251001-v1:0
+  # AU inference profiles only. Do not set us./eu./jp./global. model ids.
   AGENT_CHAT_RUNTIME: hermes
   AUTH_DISABLE_SIGNUP: "false"
   BETTER_AUTH_URL: https://yumaos.example.com

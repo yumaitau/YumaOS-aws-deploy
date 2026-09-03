@@ -287,14 +287,24 @@ variable "log_retention_days" {
 
 variable "bedrock_model_id" {
   type        = string
-  description = "Pinned Australian Bedrock inference profile for Hermes and Mastra."
+  description = "Australian Bedrock inference profile for Hermes and Mastra. Must be au.* — not us., eu., jp., or global."
   default     = "au.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+  validation {
+    condition     = can(regex("^au\\.", var.bedrock_model_id))
+    error_message = "bedrock_model_id must be an Australian inference profile (au.*). us./eu./jp./global. profiles are not allowed."
+  }
 }
 
 variable "bedrock_model_capable" {
   type        = string
-  description = "Optional capable-rung Bedrock id. Defaults to the same pinned Haiku profile."
+  description = "Optional capable-rung Australian Bedrock profile. Must be au.*."
   default     = "au.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+  validation {
+    condition     = can(regex("^au\\.", var.bedrock_model_capable))
+    error_message = "bedrock_model_capable must be an Australian inference profile (au.*). us./eu./jp./global. profiles are not allowed."
+  }
 }
 
 variable "app_timezone" {

@@ -18,18 +18,26 @@ The YumaOS web image requires a current AWS Marketplace contract entitlement. It
 
 First visitor registers. Then lock public signup if you want. Support: https://os.yumait.com.au/contact
 
-## Highlights
+## Highlights (Seller Central max 3)
 
 - Buyer-owned VPC, RDS, Redis, S3, EFS, and KMS. The publisher does not host your data.
-- YumaOS and Hermes share one Fargate task and talk on `127.0.0.1`. Do not route that traffic through the ALB.
-- Bedrock Australian Haiku in `ap-southeast-2`. No access keys in task definitions.
-- Human approval on destructive agent actions. The gate has no off switch.
-- Listing images are multi-arch (`linux/amd64` and `linux/arm64`). Choose `X86_64` or `ARM64` (Graviton) on the stack.
-- Launch with CloudFormation or Terraform (ECS Fargate) or Helm (Amazon EKS) from the public deploy repository. One task or one pod only (`MaxCount=1`).
+- YumaOS and Hermes share one Fargate task and talk on 127.0.0.1. Destructive agent actions wait for human approval; the gate has no off switch.
+- Launch with Terraform, CloudFormation, or Helm from https://github.com/yumaitau/YumaOS-aws-deploy. One task or one pod only (MaxCount=1).
+
+## Pricing (AWS Marketplace contract)
+
+One `standard_deployment` seat (`MaxCount=1`).
+
+- 1 month: **USD 600**
+- 12 months: **USD 6,000** (two months included)
+
+Infrastructure (Fargate, RDS, Redis, NAT, S3, EFS, KMS, Bedrock tokens) is billed by AWS to the buyer, separate from this contract. Test subscriptions use a **$0 private offer**, never the public list price.
+
+Seller Central public offer uses `ConfigurableUpfrontPricingTerm` (License Manager), not a $0.001 recurring placeholder.
 
 ## Categories
 
-Business Applications / Operations
+Business Applications / Operations. Seller Central tokens currently on the product: IT Business Management, CRM, Project Management.
 
 ## Support information
 

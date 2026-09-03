@@ -86,7 +86,9 @@ Details: [`charts/yumaos/README.md`](charts/yumaos/README.md).
 
 ## Cost
 
-You pay AWS directly for Fargate, ALB, NAT, RDS, ElastiCache, S3, EFS, KMS, Secrets Manager, CloudWatch, Bedrock tokens, and optional WAF/Backup. Marketplace contract charges are separate.
+AWS Marketplace contract: **USD 600 per month** (or USD 6,000 per year) for one `standard_deployment` seat. Subscribe on the listing before you pull images or create a stack.
+
+You also pay AWS directly for Fargate, ALB, NAT, RDS, ElastiCache, S3, EFS, KMS, Secrets Manager, CloudWatch, Bedrock tokens, and optional WAF/Backup. Those infrastructure charges are separate from the contract.
 
 ## Destroy
 

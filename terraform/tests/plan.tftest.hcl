@@ -134,6 +134,43 @@ run "secure_test_baseline" {
 
   assert {
     condition = anytrue([
+      for variable in local.hermes_environment :
+      variable.name == "HERMES_INFERENCE_PROVIDER" && variable.value == "bedrock"
+    ])
+    error_message = "Hermes must use the Bedrock provider."
+  }
+
+  assert {
+    condition = anytrue([
+      for variable in local.hermes_environment :
+      variable.name == "HERMES_MODEL" && variable.value == "au.anthropic.claude-haiku-4-5-20251001-v1:0"
+    ])
+    error_message = "Hermes must be pinned to Australian Haiku."
+  }
+
+  assert {
+    condition = alltrue([
+      strcontains(file("${path.module}/main.tf"), "inference-profile/au.anthropic.*"),
+      strcontains(file("${path.module}/main.tf"), "ap-southeast-4"),
+      !strcontains(file("${path.module}/iam.tf"), "us.anthropic"),
+      !strcontains(file("${path.module}/iam.tf"), "global.anthropic"),
+      !strcontains(file("${path.module}/main.tf"), "bedrock:*::foundation-model"),
+    ])
+    error_message = "Task role must invoke only au.anthropic profiles, with foundation models in Sydney and Melbourne only."
+  }
+
+  assert {
+    condition = alltrue([
+      strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "inference-profile/au.anthropic.*"),
+      !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "us.anthropic"),
+      !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "global.anthropic"),
+      !strcontains(file("${path.module}/../cloudformation/yumaos-fargate.yaml"), "bedrock:*::foundation-model"),
+    ])
+    error_message = "CloudFormation must invoke only au.anthropic profiles, not us./global. or wildcard-region foundation models."
+  }
+
+  assert {
+    condition = anytrue([
       for variable in local.common_environment :
       variable.name == "AUTH_DISABLE_SIGNUP" && variable.value == "false"
     ])

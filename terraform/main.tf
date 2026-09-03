@@ -39,13 +39,27 @@ locals {
     }
   }
 
-  # Hermes s6 starts as root, drops to uid 10000, and needs a writable home.
+  # Hermes s6 starts as root, then drops to uid 10000. Fargate rejects
+  # linuxParameters.capabilities.add (CHOWN/SETUID/…). Drop the dangerous
+  # set and leave the uid-change caps that s6 needs.
   hermes_hardening = {
     privileged = false
     linuxParameters = {
       capabilities = {
-        drop = ["ALL"]
-        add  = ["CHOWN", "DAC_OVERRIDE", "KILL", "SETGID", "SETUID"]
+        drop = [
+          "AUDIT_WRITE",
+          "MKNOD",
+          "NET_ADMIN",
+          "NET_RAW",
+          "SYS_ADMIN",
+          "SYS_BOOT",
+          "SYS_MODULE",
+          "SYS_PACCT",
+          "SYS_PTRACE",
+          "SYS_RAWIO",
+          "SYS_TIME",
+          "SYS_TTY_CONFIG",
+        ]
       }
     }
   }
@@ -58,6 +72,21 @@ locals {
 
   bedrock_model_id      = var.bedrock_model_id
   bedrock_model_capable = var.bedrock_model_capable
+  # AU CRIS from Sydney routes only to Sydney and Melbourne. Do not add us-/eu-/global.
+  au_bedrock_destination_regions = ["ap-southeast-2", "ap-southeast-4"]
+  au_bedrock_foundation_models = [
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-sonnet-4-6*",
+  ]
+  au_bedrock_invoke_resources = concat(
+    [
+      for pair in setproduct(local.au_bedrock_destination_regions, local.au_bedrock_foundation_models) :
+      "arn:${data.aws_partition.current.partition}:bedrock:${pair[0]}::foundation-model/${pair[1]}"
+    ],
+    [
+      "arn:${data.aws_partition.current.partition}:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/au.anthropic.*",
+    ],
+  )
 
   common_environment = [
     { name = "NODE_ENV", value = "production" },
@@ -127,6 +156,7 @@ locals {
     { name = "HERMES_MODEL", value = local.bedrock_model_id },
     { name = "AWS_REGION", value = var.aws_region },
     { name = "AWS_DEFAULT_REGION", value = var.aws_region },
+    { name = "BEDROCK_REGION", value = var.aws_region },
     { name = "APP_TIMEZONE", value = var.app_timezone },
     { name = "TZ", value = var.app_timezone },
     { name = "HERMES_UID", value = "10000" },
