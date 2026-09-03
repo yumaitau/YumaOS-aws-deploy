@@ -46,7 +46,7 @@ Details: [`cloudformation/README.md`](cloudformation/README.md). Seller Central 
 ```sh
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# pin both images to a Marketplace ECR sha-<7> that exists (not 1.0.0, 1.0.1, or 1.0.2)
+# pin both images to Marketplace ECR 1.0.3 (not 1.0.0, 1.0.1, or 1.0.2)
 # set marketplace codes; set allowed_ingress_cidrs
 terraform init
 terraform apply -var-file=terraform.tfvars

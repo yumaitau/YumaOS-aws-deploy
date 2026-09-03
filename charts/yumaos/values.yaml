@@ -1,18 +1,17 @@
-# Defaults are Marketplace ECR placeholders. Pin image.tag / hermes.image.tag
-# to a sha-<7> that already exists. Do not use latest, 1.0.0, 1.0.1, or 1.0.2.
+# Defaults are Marketplace ECR 1.0.3 (multi-arch). Do not use latest, 1.0.0, 1.0.1, or 1.0.2.
 # Helm does not create RDS, Redis, S3, EFS, ACM, or the IRSA role.
 
 replicaCount: 1
 
 image:
   repository: 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-aws
-  tag: sha-after-buyer-fargate
+  tag: "1.0.3"
   pullPolicy: IfNotPresent
 
 hermes:
   image:
     repository: 709825985650.dkr.ecr.us-east-1.amazonaws.com/yuma-it/yumaos-hermes
-    tag: sha-after-buyer-fargate
+    tag: "1.0.3"
     pullPolicy: IfNotPresent
   # Kubernetes `command` replaces Docker ENTRYPOINT (s6). Use args only.
   args:
