@@ -33,3 +33,4 @@ skip-check:
   - CKV_ECS_8 # same Hermes s6 bootstrap
   - CKV_AWS_382 # Hermes needs SETUID/SETGID/CHOWN after drop-all
   - CKV_AWS_356 # License Manager consumption APIs have no resource ARNs
+  - CKV_AWS_388 # Plain RDS PostgreSQL, no aws_s3 import role attached; no local file read path
