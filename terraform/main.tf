@@ -17,8 +17,14 @@ data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
 
+# Pin zone identity (CKV_AWS_394) so a newly added AZ never changes subnet placement.
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "zone-name"
+    values = ["${var.aws_region}a", "${var.aws_region}b"]
+  }
 }
 
 locals {
